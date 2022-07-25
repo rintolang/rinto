@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int tokenGenerator(){
+void tokenGenerator(){
+  
   // INTERPRET:  MAIN() => int main()
   //             PRINT("SOMETHING"); => printf("%s",content);
   //             IF = IF
