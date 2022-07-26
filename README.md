@@ -1,3 +1,6 @@
 # rinto
+<img src="https://i.imgur.com/VuFvkOZ.png" width=100> </img>
 
-rinto is currently under development, and I plan to make it my own programming language!
+rinto is an all in one C++ library that integrates JSON object notation, and other features in development.
+
+Watch this thread to see how this development goes!
