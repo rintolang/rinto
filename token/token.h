@@ -17,7 +17,8 @@ typedef struct {
   int column;
 } position;
 
-/* Reserved identifiers */
+/* Reserved identifiers (RID), keywords and operators
+   in the token data type.*/
 enum TOKENS {
   // Generic
   ILLEGAL = 0,
@@ -44,7 +45,66 @@ enum TOKENS {
   /* State */
   state_beg,
   RID_TRUE, RID_FALSE, RID_NULL,
-  state_end
+  state_end,
+
+  /* Operators and delimiters */
+  operator_beg,
+	ADD,            // +
+	SUB,            // -
+	MUL,            // *
+	QUO,            // /
+	REM,            // %
+
+	AND,            // &
+	OR,             // |
+	XOR,            // ^
+	SHL,            // <<
+	SHR,            // >>
+	AND_NOT,        // &^
+
+	ADD_ASSIGN,     // +=
+	SUB_ASSIGN,     // -=
+	MUL_ASSIGN,     // *=
+	QUO_ASSIGN,     // /=
+	REM_ASSIGN,     // %=
+
+	AND_ASSIGN,     // &=
+	OR_ASSIGN,      // |=
+	XOR_ASSIGN,     // ^=
+	SHL_ASSIGN,     // <<=
+	SHR_ASSIGN,     // >>=
+	AND_NOT_ASSIGN, // &^=
+
+	LAND,           // &&
+	LOR,            // ||
+	ARROW,          // <-
+	INC,            // ++
+	DEC,            // --
+
+	EQL,            // ==
+	LSS,            // <
+	GTR,            // >
+	ASSIGN,         // =
+	NOT,            // !
+
+	NEQ,            // !=
+	LEQ,            // <=
+	GEQ,            // >=
+	DEFINE,         // :=
+	ELLIPSIS,       // ...
+
+	LPAREN,         // (
+	LBRACK,         // [
+	LBRACE,         // {
+	COMMA,          // ,
+	PERIOD,         // .
+
+	RPAREN,         // )
+	RBRACK,         // ]
+	RBRACE,         // }
+	SEMICOLON,      // ;
+	COLON,          // :
+  operator_end
 };
 
 /* Initialize string-token map. */
@@ -60,6 +120,7 @@ bool is_modifier(std::string tok);
 bool is_type(std::string tok);
 bool is_expression(std::string tok);
 bool is_state(std::string tok);
+bool is_operator(std::string tok);
 bool is_identifier(std::string tok);
 
 #endif

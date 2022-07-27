@@ -1,8 +1,91 @@
 #include "token.h"
 
+bool TOKENS_INIT = false;
 std::map<std::string, token> tokens;
 
+/* Assume unknown tokens are identities. Otherwise
+   returns the value assosciated when tok is taken
+   as a key to the 'tokens' map.*/
+token lookup(std::string tok) {
+  if (!TOKENS_INIT) init_keywords();
+
+  if (tokens.find(tok) == tokens.end()) {
+    return IDENT;
+  }
+
+  return tokens[tok];
+}
+
+bool is_type(std::string tok) {
+  if (!TOKENS_INIT) init_keywords();
+
+  token t = lookup(tok);
+  if (t > type_beg && t < type_end) {
+    return true;
+  }
+
+  return false;
+}
+
+bool is_modifier(std::string tok) {
+  if (!TOKENS_INIT) init_keywords();
+
+  token t = lookup(tok);
+  if (t > mod_beg && t < mod_end) {
+    return true;
+  }
+
+  return false;
+}
+
+bool is_expression(std::string tok) {
+  if (!TOKENS_INIT) init_keywords();
+
+  token t = lookup(tok);
+  if (t > expr_beg && t < expr_end) {
+    return true;
+  }
+
+  return false;
+}
+
+bool is_state(std::string tok) {
+  if (!TOKENS_INIT) init_keywords();
+
+  token t = lookup(tok);
+  if (t > state_beg && t < state_end) {
+    return true;
+  }
+
+  return false;
+}
+
+bool is_operator(std::string tok) {
+  if (!TOKENS_INIT) init_keywords();
+
+  token t = lookup(tok);
+  if (t > operator_beg && t < operator_end){
+    return true;
+  }
+
+  return false;
+}
+
+bool is_identifier(std::string tok) {
+  if (!TOKENS_INIT) init_keywords();
+
+  if (lookup(tok) == IDENT) {
+      return true;
+  }
+
+  return false;
+}
+
+/* Assign keyword strings to their assosciated Token types.
+   Map must be initialized before calling token.h functions.*/
 void init_keywords() {
+  TOKENS_INIT = false;
+
   token_pair pairs[] = {
     /* Modifiers */
     token_pair("unsigned", RID_UNSIGNED),
@@ -37,64 +120,67 @@ void init_keywords() {
     /* State */
     token_pair("true", RID_TRUE),
     token_pair("false", RID_FALSE),
-    token_pair("null", RID_NULL)
+    token_pair("null", RID_NULL),
+
+    /* Operators */
+    token_pair("+", ADD),
+    token_pair("-", SUB),
+    token_pair("*", MUL),
+    token_pair("/", QUO),
+    token_pair("%", REM),
+
+    token_pair("&", AND),
+    token_pair("|", OR),
+    token_pair("^", XOR),
+    token_pair("<<", SHL),
+    token_pair(">>", SHR),
+    token_pair("&^", AND_NOT),
+
+    token_pair("+=", AND_ASSIGN),
+    token_pair("-=", SUB_ASSIGN),
+    token_pair("*=", MUL_ASSIGN),
+    token_pair("/=", QUO_ASSIGN),
+    token_pair("%=", REM_ASSIGN),
+
+    token_pair("&=", AND_ASSIGN),
+    token_pair("|=", OR_ASSIGN),
+    token_pair("^=", XOR_ASSIGN),
+    token_pair("<<=", SHL_ASSIGN),
+    token_pair(">>=", SHR_ASSIGN),
+    token_pair("&^=", AND_NOT_ASSIGN),
+
+    token_pair("&&", LAND),
+    token_pair("||", LOR),
+    token_pair("<-", ARROW),
+    token_pair("++", INC),
+    token_pair("--", DEC),
+
+    token_pair("==", EQL),
+    token_pair("<", LSS),
+    token_pair(">", GTR),
+    token_pair("=", ASSIGN),
+    token_pair("!", NOT),
+
+    token_pair("!=", NEQ),
+    token_pair("<=", LEQ),
+    token_pair(">=", GEQ),
+
+    token_pair("(", LPAREN),
+    token_pair("[", LBRACK),
+    token_pair("{", LBRACE),
+    token_pair(",", COMMA),
+    token_pair(".", PERIOD),
+
+    token_pair(")", RPAREN),
+    token_pair("]", RBRACK),
+    token_pair("}", RBRACE),
+    token_pair(";", SEMICOLON),
+    token_pair(":", COLON)
   };
 
-  for (int i = 0; i<27; i++) {
+  // Insert into map
+  for (int i = 0; i<72; i++) {
     tokens.insert(pairs[i]);
   }
 
 }
-
-token lookup(std::string tok) {
-  if (tokens.find(tok) == tokens.end()) {
-    return ILLEGAL;
-  }
-
-  return tokens[tok];
-}
-
-bool is_type(std::string tok) {
-  token t = lookup(tok);
-  if (t > type_beg && t < type_end) {
-    return true;
-  }
-
-  return false;
-}
-
-bool is_modifier(std::string tok) {
-  token t = lookup(tok);
-  if (t > mod_beg && t < mod_end) {
-    return true;
-  }
-
-  return false;
-}
-
-bool is_expression(std::string tok) {
-  token t = lookup(tok);
-  if (t > expr_beg && t < expr_end) {
-    return true;
-  }
-
-  return false;
-}
-
-bool is_state(std::string tok) {
-  token t = lookup(tok);
-  if (t > state_beg && t < state_end) {
-    return true;
-  }
-
-  return false;
-}
-
-bool is_identifier(std::string tok) {
-  if (lookup(tok) == ILLEGAL) {
-      return true;
-  }
-
-  return false;
-}
-
