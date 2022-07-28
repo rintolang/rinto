@@ -102,7 +102,6 @@ void init_keywords() {
     token_pair("void", RID_VOID),
     token_pair("struct", RID_STRUCT),
     token_pair("bool", RID_BOOL),
-    token_pair("func", RID_FUNC),
 
     /* Expressions */
     token_pair("if", RID_IF),
