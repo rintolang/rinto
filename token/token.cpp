@@ -86,7 +86,6 @@ bool is_state(std::string tok) {
   if (t > state_beg && t < state_end) {
     return true;
   }
-
   return false;
 }
 
@@ -97,4 +96,3 @@ bool is_identifier(std::string tok) {
 
   return false;
 }
-
