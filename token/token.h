@@ -8,8 +8,8 @@ typedef int token;
 typedef std::pair<const std::string, token> token_pair;
 
 /* The position type keeps track of character/token
-   positions, with respect to their parent document,
-   for error/warnings and debugging*/
+positions, with respect to their parent document,
+for error/warnings and debugging*/
 typedef struct {
   std::string file;
   int offset;
@@ -18,7 +18,7 @@ typedef struct {
 } position;
 
 /* Reserved identifiers (RID), keywords and operators
-   in the token data type.*/
+in the token data type.*/
 enum TOKENS {
   // Generic
   ILLEGAL = 0,
@@ -111,11 +111,11 @@ enum TOKENS {
 void init_keywords();
 
 /* Takes a string 'tok' and returns the assosciated
-   token.*/
+token.*/
 token lookup(std::string tok);
 
 /* Takes a string 'tok' and returns true/false if
-   instance of specified token type. */
+instance of specified token type. */
 bool is_modifier(std::string tok);
 bool is_type(std::string tok);
 bool is_expression(std::string tok);

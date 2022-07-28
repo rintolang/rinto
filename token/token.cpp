@@ -4,8 +4,8 @@ bool TOKENS_INIT = false;
 std::map<std::string, token> tokens;
 
 /* Assume unknown tokens are identities. Otherwise
-   returns the value assosciated when tok is taken
-   as a key to the 'tokens' map.*/
+returns the value assosciated when tok is taken
+as a key to the 'tokens' map.*/
 token lookup(std::string tok) {
   if (!TOKENS_INIT) init_keywords();
 
@@ -82,7 +82,7 @@ bool is_identifier(std::string tok) {
 }
 
 /* Assign keyword strings to their assosciated Token types.
-   Map must be initialized before calling token.h functions.*/
+Map must be initialized before calling token.h functions.*/
 void init_keywords() {
   TOKENS_INIT = false;
 
