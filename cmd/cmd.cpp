@@ -1,6 +1,30 @@
 #include "cmd.h"
+
 std::map<std::string, Flag> flags;
+std::map<std::string, Target> targets;
+
 Flag arr[3];
+Target targ[3];
+
+void initTarget(){
+  Target x86, x64, ARM;
+
+  x86.type = "x86";
+  x86.intel = true;
+  targ[0] = x86;
+
+  x64.type = "x64";
+  x64.intel = true;
+  targ[1] = x64;
+
+  ARM.type = "ARM";
+  ARM.intel = false;
+  targ[2] = ARM;
+
+  for(int a = 0; a < sizeof(targ)/sizeof(targ[0]); a++) {
+    targets[targ[a].type] = targ[a];
+  }
+}
 
 void initFlags(){
   Flag assembly,help,version;
@@ -31,15 +55,9 @@ void initFlags(){
   }
 }
 
-int main(){
-  initFlags();
-  printHelp();
-}
-
 void printHelp(){
   std::cout<<"Usage:\n\n\trinto [Parameters=[value], flag] [file.rin]+"<<std::endl;
   std::cout<<"\nThe commands are: \n" << std::endl;
-
   for(int a = 0; a < sizeof(arr)/sizeof(arr[0]); a++){
     std::cout << "\t" << arr[a].flag[0] << " " << arr[a].flag[1];
     for (int i = 25 - arr[a].flag[1].length(); i>0; i--)
@@ -48,4 +66,15 @@ void printHelp(){
     std::cout << "\t" << arr[a].help << std::endl;
   }
 
+  std::cout<<"\nThe parameters are: \n" << std::endl;
+  for(int a = 0; a < sizeof(targ)/sizeof(targ[0]); a++)
+    std::cout << "\t" << targ[a].type << std::endl;
 }
+
+int main(){
+  initTarget();
+  initFlags();
+  printHelp();
+}
+
+

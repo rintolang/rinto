@@ -36,7 +36,10 @@ struct Flag{
 	bool takesValue;
 };
 
-
+struct Target{
+  std::string type;
+  bool intel;
+};
 
 void printHelp();
 void parseArgv();
