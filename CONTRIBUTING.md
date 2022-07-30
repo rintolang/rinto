@@ -26,6 +26,40 @@ int my_variable; // Incorrect
 int myVariable;  // Correct
 ```
 Names should not be capitalized unless otherwise stated.
+<<<<<<< HEAD
+=======
+### Packages/libraries
+Separate programs should be written in separate folders (i.e 'packages'). Separate packages should be written under their own namespace, with the exception of classes:
+```C++
+namespace MyLibrary
+{
+
+int myFunction()
+{
+    // ...
+    return 0;
+}
+
+}
+```
+If a package has both member functions and a separate class, then the class should inherit the name of the package and the member functions should use a namespace of the same name. For example:
+```C++
+namespace MyLibrary
+{
+int memberFunction();
+int memberFunction2();
+}
+
+class MyLibrary
+{
+    // ...
+}
+
+```
+This way, everything related to `MyLibrary` is addressible either through `MyLibrary.ClassAttribute` or `MyLibrary::memberFunction`.
+#### Namespaces are important
+Namespace curly braces should begin on their own new lines.
+>>>>>>> 5d74d0b (created CONTRIBUTING.md)
 ### Classes
 #### Header files
 Classes should always be templated in `.h` files.
