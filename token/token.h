@@ -5,16 +5,16 @@
 #include <map>
 
 typedef int token;
-typedef std::pair<const std::string, token> token_pair;
+typedef std::pair<const std::string, token> tokenPair;
 
 /* The position type keeps track of character/token
 positions, with respect to their parent document,
 for error/warnings and debugging*/
 typedef struct {
-  std::string file;
-  int offset;
-  int line;
-  int column;
+  std::string  file;
+  int          offset;
+  int          line;
+  int          column;
 } position;
 
 /* Reserved identifiers (RID), keywords and operators
@@ -80,7 +80,7 @@ enum TOKENS {
   ARROW,          // <-
   INC,            // ++
   DEC,            // --
- 
+
   EQL,            // ==
   LSS,            // <
   GTR,            // >
@@ -108,7 +108,7 @@ enum TOKENS {
 };
 
 /* Initialize string-token map. */
-void init_keywords();
+void initTokens();
 
 /* Takes a string 'tok' and returns the assosciated
 token.*/
@@ -116,11 +116,11 @@ token lookup(std::string tok);
 
 /* Takes a string 'tok' and returns true/false if
 instance of specified token type. */
-bool is_modifier(std::string tok);
-bool is_type(std::string tok);
-bool is_expression(std::string tok);
-bool is_state(std::string tok);
-bool is_operator(std::string tok);
-bool is_identifier(std::string tok);
+bool isModifier(std::string tok);
+bool isType(std::string tok);
+bool isExpression(std::string tok);
+bool isState(std::string tok);
+bool isOperator(std::string tok);
+bool isIdentifier(std::string tok);
 
 #endif
