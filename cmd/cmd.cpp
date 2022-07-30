@@ -3,17 +3,17 @@
 std::map<std::string, Flag> flags;
 std::map<std::string, Target> targets;
 
-Flag arr[3];
-Target targ[3];
+Flag arr[4];
+Target targ[5];
 
 void initTarget(){
-  Target x86, x64, ARM;
+  Target x86, x64, ARM, ARM64, RISCV;
 
-  x86.type = "x86";
+  x86.type = "x86-32";
   x86.intel = true;
   targ[0] = x86;
 
-  x64.type = "x64";
+  x64.type = "x86-64";
   x64.intel = true;
   targ[1] = x64;
 
@@ -21,13 +21,21 @@ void initTarget(){
   ARM.intel = false;
   targ[2] = ARM;
 
+  ARM64.type = "ARM-64";
+  ARM64.intel = false;
+  targ[3] = ARM64;
+
+  RISCV.type = "RISC-V";
+  RISCV.intel = false;
+  targ[4] = RISCV;
+
   for(int a = 0; a < sizeof(targ)/sizeof(targ[0]); a++) {
     targets[targ[a].type] = targ[a];
   }
 }
 
 void initFlags(){
-  Flag assembly,help,version;
+  Flag assembly,help,version,target;
 
   assembly.flag[0] = "-S";
   assembly.flag[1] = "";
@@ -46,6 +54,12 @@ void initFlags(){
   version.help = "Prints out the current version of rinto.";
   version.takesValue = false;
   arr[2] = version;
+
+  target.flag[0] = "-t";
+  target.flag[1] = "--target";
+  target.help = " Target specifies the file's compilation target architecture.";
+  target.takesValue = true;
+  arr[3] = target;
 
   for(int a = 0; a < sizeof(arr)/sizeof(arr[0]); a++) {
     flags[arr[a].flag[0]] = arr[a];
@@ -66,7 +80,7 @@ void printHelp(){
     std::cout << "\t" << arr[a].help << std::endl;
   }
 
-  std::cout<<"\nThe parameters are: \n" << std::endl;
+  std::cout<<"\nTargets: \n" << std::endl;
   for(int a = 0; a < sizeof(targ)/sizeof(targ[0]); a++)
     std::cout << "\t" << targ[a].type << std::endl;
 }
