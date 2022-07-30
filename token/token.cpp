@@ -2,42 +2,42 @@
 
 std::map<std::string, token> tokens;
 
-void init_keywords() {
-  token_pair pairs[] = {
+void initTokens()
+{
+  tokenPair pairs[] = {
     /* Modifiers */
-    token_pair("unsigned", RID_UNSIGNED),
-    token_pair("long", RID_LONG),
-    token_pair("const", RID_CONST),
-    token_pair("short", RID_SHORT),
+    tokenPair("unsigned", RID_UNSIGNED),
+    tokenPair("long", RID_LONG),
+    tokenPair("const", RID_CONST),
+    tokenPair("short", RID_SHORT),
 
     /* Types */
-    token_pair("int", RID_INT),
-    token_pair("float", RID_FLOAT),
-    token_pair("char", RID_CHAR),
-    token_pair("string", RID_STRING),
-    token_pair("double", RID_DOUBLE),
-    token_pair("void", RID_VOID),
-    token_pair("struct", RID_STRUCT),
-    token_pair("bool", RID_BOOL),
-    token_pair("func", RID_FUNC),
+    tokenPair("int", RID_INT),
+    tokenPair("float", RID_FLOAT),
+    tokenPair("char", RID_CHAR),
+    tokenPair("string", RID_STRING),
+    tokenPair("double", RID_DOUBLE),
+    tokenPair("void", RID_VOID),
+    tokenPair("struct", RID_STRUCT),
+    tokenPair("bool", RID_BOOL),
 
     /* Expressions */
-    token_pair("if", RID_IF),
-    token_pair("else", RID_ELSE),
-    token_pair("for", RID_FOR),
-    token_pair("switch", RID_SWITCH),
-    token_pair("case", RID_CASE),
-    token_pair("break", RID_CONTINUE),
-    token_pair("return", RID_RETURN),
-    token_pair("goto", RID_GOTO),
-    token_pair("while", RID_WHILE),
-    token_pair("default", RID_DEFAULT),
-    token_pair("sizeof", RID_SIZEOF),
+    tokenPair("if", RID_IF),
+    tokenPair("else", RID_ELSE),
+    tokenPair("for", RID_FOR),
+    tokenPair("switch", RID_SWITCH),
+    tokenPair("case", RID_CASE),
+    tokenPair("break", RID_CONTINUE),
+    tokenPair("return", RID_RETURN),
+    tokenPair("goto", RID_GOTO),
+    tokenPair("while", RID_WHILE),
+    tokenPair("default", RID_DEFAULT),
+    tokenPair("sizeof", RID_SIZEOF),
 
     /* State */
-    token_pair("true", RID_TRUE),
-    token_pair("false", RID_FALSE),
-    token_pair("null", RID_NULL)
+    tokenPair("true", RID_TRUE),
+    tokenPair("false", RID_FALSE),
+    tokenPair("null", RID_NULL)
   };
 
   for (int i = 0; i<27; i++) {
@@ -46,7 +46,8 @@ void init_keywords() {
 
 }
 
-token lookup(std::string tok) {
+token lookup(std::string tok)
+{
   if (tokens.find(tok) == tokens.end()) {
     return ILLEGAL;
   }
@@ -54,7 +55,8 @@ token lookup(std::string tok) {
   return tokens[tok];
 }
 
-bool is_type(std::string tok) {
+bool isType(std::string tok)
+{
   token t = lookup(tok);
   if (t > type_beg && t < type_end) {
     return true;
@@ -63,7 +65,8 @@ bool is_type(std::string tok) {
   return false;
 }
 
-bool is_modifier(std::string tok) {
+bool isModifier(std::string tok)
+{
   token t = lookup(tok);
   if (t > mod_beg && t < mod_end) {
     return true;
@@ -72,7 +75,8 @@ bool is_modifier(std::string tok) {
   return false;
 }
 
-bool is_expression(std::string tok) {
+bool isExpression(std::string tok)
+{
   token t = lookup(tok);
   if (t > expr_beg && t < expr_end) {
     return true;
@@ -81,7 +85,8 @@ bool is_expression(std::string tok) {
   return false;
 }
 
-bool is_state(std::string tok) {
+bool isState(std::string tok)
+{
   token t = lookup(tok);
   if (t > state_beg && t < state_end) {
     return true;
@@ -90,7 +95,8 @@ bool is_state(std::string tok) {
   return false;
 }
 
-bool is_identifier(std::string tok) {
+bool isIdentifier(std::string tok)
+{
   if (lookup(tok) == ILLEGAL) {
       return true;
   }
