@@ -27,6 +27,7 @@ int myVariable;  // Correct
 ```
 Names should not be capitalized unless otherwise stated.
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 ### Packages/libraries
 Separate programs should be written in separate folders (i.e 'packages'). Separate packages should be written under their own namespace, with the exception of classes:
@@ -60,6 +61,8 @@ This way, everything related to `MyLibrary` is addressible either through `MyLib
 #### Namespaces are important
 Namespace curly braces should begin on their own new lines.
 >>>>>>> 5d74d0b (created CONTRIBUTING.md)
+=======
+>>>>>>> 3693974 (created CONTRIBUTING.md)
 ### Classes
 #### Header files
 Classes should always be templated in `.h` files.
