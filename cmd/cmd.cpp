@@ -6,7 +6,8 @@ std::map<std::string, Target> targets;
 Flag arr[4];
 Target targ[5];
 
-void initTarget(){
+void initTarget()
+{
   Target x86, x64, ARM, ARM64, RISCV;
 
   x86.type = "x86-32";
@@ -34,7 +35,8 @@ void initTarget(){
   }
 }
 
-void initFlags(){
+void initFlags()
+{
   Flag assembly,help,version,target;
 
   assembly.flag[0] = "-S";
@@ -57,7 +59,7 @@ void initFlags(){
 
   target.flag[0] = "-t";
   target.flag[1] = "--target";
-  target.help = " Target specifies the file's compilation target architecture.";
+  target.help = "Target specifies the file's compilation target architecture.";
   target.takesValue = true;
   arr[3] = target;
 
@@ -69,7 +71,8 @@ void initFlags(){
   }
 }
 
-void printHelp(){
+void printHelp()
+{
   std::cout<<"Usage:\n\n\trinto [Parameters=[value], flag] [file.rin]+"<<std::endl;
   std::cout<<"\nThe commands are: \n" << std::endl;
   for(int a = 0; a < sizeof(arr)/sizeof(arr[0]); a++){
@@ -82,10 +85,12 @@ void printHelp(){
 
   std::cout<<"\nTargets: \n" << std::endl;
   for(int a = 0; a < sizeof(targ)/sizeof(targ[0]); a++)
-    std::cout << "\t" << targ[a].type << std::endl;
+    std::cout << "\t" <<targ[a].type;
+  std::cout<<std::endl;
 }
 
-int main(){
+int main()
+{
   initTarget();
   initFlags();
   printHelp();
