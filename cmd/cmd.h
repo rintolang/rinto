@@ -4,44 +4,42 @@
 #include <string>
 #include <iostream>
 
-
 /*
-  rinto [Parameters=[value], flag] file1.rin file2.rin 
-
-    Flags
-     -S = assembly
-     -h
-     --help
-     -v = version 
-
-    Parameters
-      -o = name output file
-    Target
-      x86
-      x64
-      ARM
-*/
-
-/*
-tokenize argv
-generate AST
-parse AST
-generate C++ code
-create executable
+*       rinto [Parameters=[value], flag] file1.rin file2.rin 
+*
+*       Flags
+*                -S = assembly
+*                -h
+*                --help
+*                -v = version 
+*
+*       Parameters
+*               -o = name output file
+*       Target
+*               x86
+*               x64
+*               ARM
+*
+*       tokenize argv
+*       generate AST
+*       parse AST
+*       generate Assembly code
+*       create executable
 */
 
 struct Flag{
-	std::string flag[2];
-	std::string help;
-	bool takesValue;
+        std::string     flag[2];
+        std::string     help;
+        bool            takesValue;
 };
 
 struct Target{
-  std::string type;
-  bool intel;
+        std::string     type;
+        bool            intel;
 };
-
+void initTarget();
+void initFlags();
 void printHelp();
-void parseArgv();
+// void parseArgv();
 
 #endif
