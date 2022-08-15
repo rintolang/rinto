@@ -11,7 +11,7 @@ typedef enum {
         /* Basic */
         ILLEGAL = 0, EOL, R_EOF,
 
-        // Types
+        /* Types */
         type_beg,
         RID_INT,  RID_FLOAT, RID_CHAR, RID_STRING, RID_DOUBLE,
         RID_VOID, RID_BOOL,
