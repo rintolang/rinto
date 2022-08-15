@@ -237,7 +237,8 @@ bool Scanner::errorsFromExpect()
 void Scanner::acknowledge(scanToken tok)
 {
         /* Must check before errorsFromExpect, which might remove
-           the top stack element.*/
+         * the top stack element.
+         */
         if (tok.tok > operator_right && tok.tok < operator_right_end) {
                 if (Expecting.empty()) goto rhs_errorf;
                 if (Expecting.top().have.tok != getSymbolPair(tok.tok)) {
@@ -248,11 +249,13 @@ rhs_errorf:             errorf("Pair-symbol %s is unmatched.", &toString(tok.tok
         }
 
         /* Passes tok to errorsFromExpect, which will push
-           errors if tok doesn't meet expectations.*/
+         * errors if tok doesn't meet expectations.
+         */
         if (errorsFromExpect(tok)) return;
 
         /* Left operator must eventually be closed by right-side
-           operator*/
+         * operator
+         */
         if (tok.tok > operator_left && tok.tok < operator_left_end)
                 expect(tok, false, 0, 1, getSymbolPair(tok.tok));
 
@@ -282,7 +285,8 @@ bool Scanner::isWhitespace(char ch)
 bool Scanner::scanNext()
 {
         /* It is assumed that the scanNext always begins with the
-           start of a file or after having scanned a token. */
+         * start of a file or after having scanned a token.
+         */
 
         skipWhitespace();
         int ch = Source.getChar();
@@ -302,7 +306,8 @@ bool Scanner::scanNext()
                 int stop = ch;
 
                 /* Keep iterating until the closing operator (' or ")
-                   is found. */
+                 * is found.
+                 */
                 ch = Source.getChar();
                 while (ch != stop) {
                         if (ch == -1) {
@@ -315,7 +320,8 @@ bool Scanner::scanNext()
                 tok += ch;
 
                 /* String literals are expected to be followed by
-                   whitespace, newline or symbol char */
+                 * whitespace, newline or symbol char
+                 */
                 int peek = Source.peek();
                 if (!isWhitespace((char)peek) && peek != '\n' &&
                     typeOf(peek) != t_Symbol && peek != -1)
@@ -324,7 +330,8 @@ bool Scanner::scanNext()
                                peek, &tok[0]);
 
                         /* Dont care if peek() is EOF, it will get captured
-                           at next iteration. */
+                         * at next iteration.
+                         */
                         return true;
                 }
 
@@ -340,7 +347,8 @@ bool Scanner::scanNext()
                 tok += ch;
 
                 /* Loop as long as next character is hex,
-                   append it to tok.*/
+                 * append it to tok.
+                 */
                 int peek = Source.peek();
                 std::regex hex(R"([a-f, A-F, 0-9])");
                 std::string regexStr(1, (char)peek);
@@ -353,7 +361,8 @@ bool Scanner::scanNext()
                 }
 
                 /* Ensure the entire word is hex - no non-hex
-                   should follow the token.*/
+                 *  should follow the token.
+                 */
                 if (!isWhitespace((char)peek) && peek != '\n' &&
                     typeOf(peek) != t_Symbol && peek != -1)
                 {
@@ -381,7 +390,8 @@ getDigit:       while (std::regex_match(regexStr, digitRegex)) {;
                 }
 
                 /* Continue reading if a dot is detected, but ensure
-                that this only ever happens once.*/
+                 * that this only ever happens once.
+                 */
                 if (!dot && peek == '.') {
                         dot = true;
                         tok += Source.getChar();
@@ -426,7 +436,8 @@ getDigit:       while (std::regex_match(regexStr, digitRegex)) {;
                 }
 
                 /* Literals should've already been captured, but
-                   there's no harm in checking again.*/
+                 * there's no harm in checking again.
+                 */
                 if (wordType == t_Literal) {
                         Buffer.emplace((scanToken){t_Literal, ILLEGAL, tok, tok});
                         return true;
@@ -442,7 +453,8 @@ getDigit:       while (std::regex_match(regexStr, digitRegex)) {;
                 }
 
                 /* If not literal, identifier or error, then no special
-                   treatment is needed. Just return.*/
+                 *  treatment is needed. Just return.
+                 */
                 Buffer.emplace((scanToken){typeOf(tok), lookup(tok), tok, ""});
                 return true;
         }
