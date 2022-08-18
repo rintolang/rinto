@@ -27,17 +27,8 @@ token lookup(std::string str)
         if (!_inited) _initMap();
 
         /* If key doesn't exist, then map returns 0. Fortunately,
-<<<<<<< HEAD
-<<<<<<< HEAD
          * that corresponds to the ILLEGAL token.
          */
-=======
-           that corresponds to the ILLEGAL token.*/
->>>>>>> ca7c841 (created tokens)
-=======
-         * that corresponds to the ILLEGAL token.
-         */
->>>>>>> 5d5fff6 (use linux-style comments)
         return tokenMap[str];
 }
 
