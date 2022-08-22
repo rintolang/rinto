@@ -1,5 +1,5 @@
 <p align="center">
-    <img width="100" height="100" src="https://github.com/rohan221102/rinto/blob/main/doc/logoPositive.png">
+    <a href="https://rintolang.github.io"><img width="100" height="100" src="https://github.com/rohan221102/rinto/blob/main/doc/logoPositive.png"></a>
 </p>
 
 # Website
