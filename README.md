@@ -2,9 +2,6 @@
     <img width="100" height="100" src="https://github.com/rohan221102/rinto/blob/main/doc/logoPositive.png">
 </p>
 
-# CMD Branch
-This is a branch of the main rinto repository. This branch focuses on developing the functionality of the command line interface of the program.
-
 # Website
 <a href="https://rintolang.github.io">rintolang.github.io</a>
 
