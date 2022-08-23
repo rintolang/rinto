@@ -2,9 +2,9 @@
 #define LANG_H
 
 typedef enum {
-  t_ILLEGAL = 0,
-  t_Type,  t_Modifier, t_Keyword, t_State, t_Symbol,
-  t_Ident, t_Literal
+        t_ILLEGAL = 0,
+        t_Type,  t_Modifier, t_Keyword, t_State, t_Symbol,
+        t_Ident, t_Literal
 } tokenType;
 
 typedef enum {
