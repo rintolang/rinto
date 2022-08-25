@@ -36,7 +36,7 @@ bool Node::hasChildren()
 
 void Node::setParent(Node* parent)
 {
-        if (parent == nullptr)
+        if (parent == nullptr || Parent == parent)
                 return;
 
         Node* prev = PrevSibling;
@@ -50,7 +50,6 @@ void Node::setParent(Node* parent)
 
         /* Node's siblings will be configured by addChild().*/
         parent->addChild(this);
-
 }
 
 bool Node::addChild(Node* child)
@@ -66,6 +65,8 @@ bool Node::addChild(Node* child)
 
         if (FirstChild == nullptr)
                 FirstChild = child;
+
+        return true;
 }
 
 void Node::getChildren(std::vector<Node*>& children)
