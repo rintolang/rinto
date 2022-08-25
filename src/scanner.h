@@ -35,7 +35,7 @@ typedef struct {
 
 /*
  * scanToken represents the main output structure of
- * the scanner. It descripes the token, its type and
+ * the scanner. It describes the token, its type and
  * (if applicable) its literal and string values.
  */
 typedef struct {
