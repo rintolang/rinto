@@ -10,12 +10,8 @@ Node::~Node()
         }
 }
 
-nodeType Node::getType() {
-        return Type;
-}
-
 bool Node::hasParent() {
-        return (Parent != nullptr) ? true : false;
+        return (Parent != nullptr);
 }
 
 bool Node::hasSiblings()
@@ -57,6 +53,12 @@ bool Node::addChild(Node* child)
         if (child == nullptr)
                 return false;
 
+        /* Adding same-value nodes is permitted, but addresses
+         * shouldn't be the same.
+         */
+        if (child == this)
+                return false;
+
         if (LastChild != nullptr)
                 LastChild->setSiblings(LastChild->prevSibling(), child);
 
@@ -66,6 +68,7 @@ bool Node::addChild(Node* child)
         if (FirstChild == nullptr)
                 FirstChild = child;
 
+        child->Parent = this;
         return true;
 }
 
@@ -124,4 +127,28 @@ void Node::setSiblings(Node* prev, Node* next)
 {
         NextSibling = next;
         PrevSibling = prev;
+}
+
+bool Node::operator==(const Node& rhs)
+{
+        if (this->Parent != rhs.Parent)
+                return false;
+
+        if (this->PrevSibling != rhs.PrevSibling)
+                return false;
+
+        if (this->NextSibling != rhs.NextSibling)
+                return false;
+
+        if (this->FirstChild != rhs.FirstChild)
+                return false;
+
+        if (this->LastChild != rhs.LastChild)
+                return false;
+
+        return true;
+}
+
+bool Node::operator!=(const Node& rhs) {
+        return !(*this == rhs);
 }

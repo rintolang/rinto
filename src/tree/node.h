@@ -11,11 +11,6 @@ typedef enum {
         SKIP_CHILDREN
 } walkStatus;
 
-/* TODO */
-typedef enum {
-        NONE = 0
-} nodeType;
-
 /*
  * walkStatus defines a callback fn tupe for preorder
  * tree traversal. Node is the current node visited and
@@ -26,20 +21,20 @@ typedef walkStatus (*walkFn) (Node* node, bool entering);
 
 class Node
 {
-private:
+protected:
         Node* Parent      = nullptr;
         Node* PrevSibling = nullptr;
         Node* NextSibling = nullptr;
         Node* FirstChild  = nullptr;
         Node* LastChild   = nullptr;
 
-        nodeType Type         = NONE;
-        walkFn   WalkCallback = nullptr;
+        walkFn WalkCallback = nullptr;
 public:
         Node(){};
         ~Node();
 
-        nodeType getType();
+        bool operator==(const Node& rhs);
+        bool operator!=(const Node& rhs);
 
         bool hasParent();
         bool hasSiblings();
