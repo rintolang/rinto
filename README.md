@@ -3,7 +3,7 @@
 </p>
 
 # The Rinto Programming Language
-Rinto is an in-development open source toy programming language based on C/C++. It aims to simplify and modernize C-Family features and syntax. For the project's website, see [here](rintolang.github.io).
+Rinto is an in-development open source toy programming language based on C/C++. It aims to simplify and modernize C-Family features and syntax. For the project's website, see [here](https://rintolang.github.io).
 
 ## Contributing
 Contributions are welcome and appreciated. If you're interested, refer to the issue tracker and familiarize yourself with the [contributing guide](CONTRIBUTING.md).
