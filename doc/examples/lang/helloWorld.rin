@@ -1,3 +1,7 @@
+void main(){
+	print("Hello, World!")
+}
+
 //global variable
 string h = "global variable"
 
