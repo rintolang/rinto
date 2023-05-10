@@ -163,7 +163,7 @@ public:
 
         // Return right hand side of assignment
         Expression* rhs() const
-        { return this->_lhs; }
+        { return this->_rhs; }
 
 protected:
         Bstatement* do_get_backend(Backend* backend);

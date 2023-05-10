@@ -103,10 +103,7 @@ Bstatement* Variable_declaration_statement::do_get_backend(Backend* backend)
 // If_statement implementation
 
 If_statement::~If_statement()
-{
-        delete this->_cond;
-        delete this->_then_block;
-}
+{ delete this->_cond; }
 
 Bstatement* If_statement::do_get_backend(Backend* backend)
 {
@@ -134,7 +131,6 @@ For_statement::~For_statement()
         delete this->_ind_var;
         delete this->_cond;
         delete this->_inc;
-        delete this->_statements;
 }
 
 Bstatement* For_statement::do_get_backend(Backend* backend)
@@ -142,16 +138,7 @@ Bstatement* For_statement::do_get_backend(Backend* backend)
         RIN_ASSERT(backend);
         RIN_ASSERT(this->has_statements());
 
-        /*
-         * Induction statement may be NULL.
-         *     If not NULL, then it can be any statement (except INVALID).
-         */
-        Statement* ind_stmt = this->ind_var();
-        Bstatement* ind_bstmt = NULL;
-        if (ind_stmt != NULL) {
-                RIN_ASSERT(ind_stmt->classification() != STATEMENT_INVALID);
-                ind_bstmt = ind_stmt->get_backend(backend);
-        }
+        backend->enter_scope(this->statements());
 
         /*
          * Condition statement may be NULL.
@@ -186,8 +173,10 @@ Bstatement* For_statement::do_get_backend(Backend* backend)
                 inc_bstmt = inc_stmt->get_backend(backend);
         }
 
+        backend->leave_scope();
+
         // Build backend for-loop statement.
-        return backend->for_statement(ind_bstmt, cond_bstmt, inc_bstmt,
+        return backend->for_statement(cond_bstmt, inc_bstmt,
                 this->statements(), this->location());
 }
 
@@ -246,8 +235,10 @@ Bstatement* Compound_statement::do_get_backend(Backend* backend)
         RIN_ASSERT(this->second());
 
         // Statements are not invalid.
-        RIN_ASSERT(this->first()->classification() != STATEMENT_INVALID);
-        RIN_ASSERT(this->second()->classification() != STATEMENT_INVALID);
+        if (this->first()->classification() == STATEMENT_INVALID ||
+            this->second()->classification() == STATEMENT_INVALID) {
+                return backend->invalid_statement();
+        }
 
         // Build statements.
         Bstatement* first = this->first()->get_backend(backend);

@@ -104,7 +104,15 @@ public:
 
         // Test whether an identifier string has been defined.
         bool is_defined(const std::string& ident)
-        { return (this->lookup(ident) != NULL); }
+        {
+                if (this->lookup(ident))
+                        return true;
+
+                if (this->parent())
+                        return this->parent()->is_defined(ident);
+
+                return false;
+        }
 
         /*
          * Defines a new named_object in the scope.
@@ -207,6 +215,12 @@ public:
                 return this->_current_scope;
         }
 
+        Scope* enter_scope(Scope* scope)
+        {
+                this->_current_scope = scope;
+                return this->_current_scope;
+        }
+
         /*
          * Exits out of the current scope and into the parent scope.
          * Always returns the most current scope.
@@ -292,14 +306,13 @@ public:
         virtual Bstatement* if_statement(Bexpression*, Scope*, Location) = 0;
 
         /*
-         * Returns a for-loop statement. The ind statement can be any type
-         * of statement. Cond must be a conditional statement, inc must
-         * be an increment/decrement statement. The statements may be NULL.
+         * Returns a for-loop statement. Cond must be a conditional statement,
+         * inc must be an increment/decrement statement. The statements may be NULL.
          * The scope keeps track of statements within the for-loop, they
          * must be parsed by this function.
          */
         virtual Bstatement* for_statement
-        (Bstatement* ind, Bstatement* cond, Bstatement* inc, Scope*, Location) = 0;
+        (Bstatement* cond, Bstatement* inc, Scope*, Location) = 0;
 
         /*
          * Returns an expression wrapped as a statement. The expression must

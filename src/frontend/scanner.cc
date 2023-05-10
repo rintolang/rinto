@@ -179,7 +179,7 @@ void Scanner::acknowledge(Token tok)
                 return;
         }
         if (is_righthand_op(tok.op())) {
-                rin_error_at(tok.location(), "Unexpected paired operator %s",
+                rin_error_at(tok.location(), "Unexpected %s",
                              &operator_name(tok.op())[0]);
         }
 }
