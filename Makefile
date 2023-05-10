@@ -12,5 +12,8 @@ FRONTEND_SRC=$(FRONT-DIR)/diagnostic.cc $(FRONT-DIR)/file.cc 	      \
 debug-scanner: build-dir
 	$(CPP) $(CPP-OPTS) -I$(DEBUG-DIR) -o $(BUILD-DIR)/a.out $(DEBUG-DIR)/scanner.cc $(DEBUG-DIR)/debug-diagnostic.cc $(FRONTEND_SRC)
 
+debug-parser: build-dir
+	$(CPP) $(CPP-OPTS) -I$(DEBUG-DIR) -o $(BUILD-DIR)/a.out $(DEBUG-DIR)/parser.cc $(DEBUG-DIR)/debug-diagnostic.cc $(FRONTEND_SRC)
+
 build-dir:
 	@mkdir -p build
