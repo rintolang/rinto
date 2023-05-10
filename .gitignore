@@ -1,5 +1,39 @@
 # Ignore build files
 build
-*/.DS_Store
-*/*.out
-*/*.o
+
+# Prerequisites
+*.d
+*.rin
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Miscellaneous
+.DS_Store
