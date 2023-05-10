@@ -82,7 +82,7 @@ Bexpression* Binary_expression::do_get_backend(Backend* backend)
 
         // Create backend expressions
         Bexpression* left = this->left()->get_backend(backend);
-        Bexpression* right = this->left()->get_backend(backend);
+        Bexpression* right = this->right()->get_backend(backend);
         RIN_ASSERT(left != NULL && right != NULL);
 
         return backend->binary_expression(this->op(), left,

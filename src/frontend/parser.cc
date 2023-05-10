@@ -5,7 +5,6 @@
  * line as condition. Perhaps this should be changed?
  *
  * TODO: minus (-) as a unary operator.
- * TODO: pass any statement type into for loops.
  * TODO: for-loop increment statement parses expressions.
  */
 
@@ -44,7 +43,7 @@ void Parser::parse(bool is_supercontext)
                 }
 
                 /*
-                 * Prevents errors being issued when a non-super scope has not
+                 * Prevents errors being issued when a non-super scope has no
                  * statements, i.e for-loop with no statements.
                  */
                 if (this->_scanner->peek_token().classification() == Token::TOKEN_EOL) {
@@ -54,10 +53,9 @@ void Parser::parse(bool is_supercontext)
 
                 Statement* next = this->parse_next();
                 RIN_ASSERT(next != NULL);
-                if (!next->is_invalid()) {
+                if (!next->is_invalid())
                         this->_backend->push_statement(next->get_backend(this->_backend));
-                        delete next;
-                }
+                delete next;
         }
 
         // Issue Scanner errors, if any.
@@ -114,10 +112,6 @@ Statement* Parser::parse_next()
                 return this->parse_assignment_statement();
         }
 
-        rin_error_at(tk.location(),
-                "Expected statement but got hanging token of type %s",
-                &tk.classification_as_string()[0]);
-
 is_invalid_statement:
         this->_scanner->next_token();
         this->_scanner->skip_line();
@@ -143,7 +137,6 @@ Statement* Parser::parse_if_statement()
                              "If-statement expected left-brace '{' but received %s instead",
                              expect_lbrace.str());
                 this->_scanner->skip_line();
-                delete condition;
                 return Statement::make_invalid(if_rid.location());
         }
 
@@ -260,9 +253,15 @@ Statement* Parser::parse_for_statement()
                 return Statement::make_invalid(lbrace.location());
         }
 
-        // Parse for-loop scope
+        // Add induction statement to for-loop scope.
         Scope* loop_scope = this->_backend->enter_scope();
+        if (ind_stmt) loop_scope->push_statement(ind_stmt->get_backend(this->_backend));
+
+        this->_backend->enter_scope();
+
+        // Parse statements in for-loop scope.
         this->parse(false);
+        this->_backend->leave_scope();
 
         // Create for-loop statement
         For_statement* loop_stmt = new For_statement(ind_stmt, cond_stmt,
@@ -299,7 +298,7 @@ Statement* Parser::parse_var_dec_statement()
 
                 // Create var declaration
                 Named_object* obj = new Named_object(*ident.identifier(), ident.location());
-                return Statement::make_variable_declaration(obj);
+                return  Statement::make_variable_declaration(obj);
         }
 
         // Create a declaration and then parse it's assignment
@@ -381,10 +380,9 @@ public:
         // The node type
         enum node_type { INVALID_NODE, OPERATOR_NODE, VAR_NODE, FLOAT_NODE };
 
-        Expression_node(Token token, Token peek)
+        Expression_node(Token token)
         {
                 this->_location = token.location();
-                this->_next_str = peek.string();
                 this->_str = token.string();
 
                 Token::Classification cls = token.classification();
@@ -417,6 +415,27 @@ public:
                                 token.str());
                         _type = INVALID_NODE;
                 }
+        }
+
+        // Return the rightmost child or itself.
+        Expression_node* rightmost_child()
+        {
+                if (this->is_invalid())
+                        return NULL;
+
+                if (this->type() == VAR_NODE || this->type() == FLOAT_NODE)
+                        return this;
+
+                if (this->is_unary() && this->left_child != NULL)
+                        return this->left_child->rightmost_child();
+
+                if (this->left_child != NULL && this->right_child == NULL)
+                        return this->left_child->rightmost_child();
+
+                if (this->right_child != NULL)
+                        return this->right_child->rightmost_child();
+
+                return NULL;
         }
 
         /*
@@ -501,10 +520,6 @@ public:
                 return true;
         }
 
-        // Returns the C-string pointer of the next token for debug.
-        char* next_str()
-        { return &this->_next_str[0]; }
-
         // Returns the C-string pointer of the expression for debug.
         char* str()
         { return &this->_str[0]; }
@@ -543,9 +558,6 @@ private:
         node_type _type;
 
         Location _location;
-
-        // Next token string, for debugging.
-        std::string _next_str;
 
         // Own str
         std::string _str;
@@ -602,7 +614,7 @@ void __abort_expr_parse
 }
 
 // Recursively parses a child of an expression node
-Expression_node* __parse_ast_node(std::deque<Expression_node*>& output)
+Expression_node* __parse_ast_node(std::deque<Expression_node*>& output, bool& printed)
 {
         if (output.empty()) return NULL;
         Expression_node* child = output.back();
@@ -619,7 +631,7 @@ Expression_node* __parse_ast_node(std::deque<Expression_node*>& output)
                 return child;
 
         // --- Child is an operator ---
-        Expression_node* right = __parse_ast_node(output);
+        Expression_node* right = __parse_ast_node(output, printed);
         if (!right) {
                 child->abort();
                 delete child;
@@ -631,9 +643,19 @@ Expression_node* __parse_ast_node(std::deque<Expression_node*>& output)
                 return child;
         }
 
-        Expression_node* left = __parse_ast_node(output);
+        /*
+         * If left most operator is missing, then that means
+         * a binary operator was used incorrectly.
+         */
+        Expression_node* left = __parse_ast_node(output, printed);
         if (!left) {
                 child->abort();
+                if (!printed) {
+                        rin_error_at(child->location(),
+                                     "Invalid type argument of %s",
+                                     child->str());
+                        printed = true;
+                }
                 delete child;
                 return NULL;
         }
@@ -676,7 +698,7 @@ Expression* Parser::parse_expression(RIN_OPERATOR terminal)
 
                 case Token::TOKEN_FLOAT:
                 case Token::TOKEN_IDENT:
-                        node = new Expression_node(token, this->_scanner->peek_token());
+                        node = new Expression_node(token);
                         break;
 
                 case Token::TOKEN_EOL:
@@ -696,9 +718,17 @@ Expression* Parser::parse_expression(RIN_OPERATOR terminal)
                         goto next_token;
 
                 case Token::TOKEN_EOF:
-                        // EOF can count as a semicolon too
+
+                        /*
+                         * EOF can count as a semicolon as long as it is not
+                         * preceded by another operator (with parenthesis
+                         * being the only exception).
+                         */
                         if (terminal == OPER_SEMICOLON &&
-                            prev_token.classification() != Token::TOKEN_OPERATOR) {
+                            (prev_token.classification() != Token::TOKEN_OPERATOR
+                            || OPERATOR_PRECEDENCE[prev_token.op()] == -1
+                            || prev_token.op() == OPER_INC
+                            || prev_token.op() == OPER_DEC)) {
                                 resolves = true;
                                 goto exit_loop;
                         }
@@ -776,6 +806,9 @@ Expression* Parser::parse_expression(RIN_OPERATOR terminal)
                         if (operators.empty() || !operators.top()->is_open_paren()) {
                                 rin_error_at(token.location(), "Unmatched close parenthesis");
                                 __abort_expr_parse(operators, output);
+
+                                // Consume the parenthesis to prevent re-emitting errors.
+                                prev_token = this->_scanner->next_token();
                                 return NULL;
                         }
 
@@ -825,10 +858,20 @@ exit_loop:
         }
 
         // --- Create Abstract Syntax Tree ---
-        Expression_node* super_root = __parse_ast_node(output);
+        bool __found_err = false;
+        Expression_node* super_root = __parse_ast_node(output, __found_err);
         if (!super_root) {
-                rin_error_at(start_loc, "Malformed expression");
                 __abort_expr_parse(operators, output);
+                return NULL;
+        }
+
+        // Missing operator
+        if (!output.empty()) {
+                Expression_node* rightmost = super_root->rightmost_child();
+                rin_error_at(super_root->location(), "Expected ';' before '%s'",
+                        rightmost->str());
+                __abort_expr_parse(operators, output);
+                delete super_root;
                 return NULL;
         }
 
@@ -842,4 +885,3 @@ exit_loop:
         delete super_root;
         return binary;
 }
-
