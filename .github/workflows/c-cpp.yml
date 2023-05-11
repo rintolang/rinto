@@ -16,8 +16,9 @@ jobs:
     - name: Install dependencies on Ubuntu-latest
       run: |
           sudo apt-get update
-          sudo apt-get install libmpfr-dev
-          gcc --version
+          sudo apt-get install libmpfr-dev libmpfr6
           g++ --version
-    - name: make
-      run: make
+    - name: Debug-Scanner Module
+      run: make debug-scanner
+    - name: Debug-Parser Module
+      run: make debug-parser
