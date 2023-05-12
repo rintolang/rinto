@@ -103,7 +103,7 @@ Bexpression* Var_expression::do_get_backend(Backend* backend) {
 
         if (!is_defined) {
                 rin_error_at(obj->location(), "'%s' is undeclared",
-                        &obj->identifier()[0]);
+                        obj->identifier().c_str());
                 return backend->invalid_expression();
         }
 

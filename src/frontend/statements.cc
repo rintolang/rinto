@@ -85,7 +85,7 @@ Bstatement* Variable_declaration_statement::do_get_backend(Backend* backend)
         RIN_ASSERT(backend->current_scope());
         if (backend->current_scope()->is_defined(this->identifier())) {
                 rin_error_at(this->var()->location(), "Redefinition of '%s'",
-                        &this->identifier()[0]);
+                        this->identifier().c_str());
                 return backend->invalid_statement();
         }
 

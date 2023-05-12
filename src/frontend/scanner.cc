@@ -28,7 +28,7 @@ Token::Token(const Token& tok)
 {
         if (tok._classification == TOKEN_INTEGER
             || tok._classification == TOKEN_FLOAT) {
-                mpfr_init_set_str(this->value.float_value, &tok.token_string[0], 10, MPFR_RNDN);
+                mpfr_init_set_str(this->value.float_value, tok.token_string.c_str(), 10, MPFR_RNDN);
         } else if (tok._classification == TOKEN_IDENT)
                 this->value.id_name = new std::string(*tok.value.id_name);
         else if (tok._classification == TOKEN_OPERATOR)
@@ -87,7 +87,7 @@ Token Token::make_operator_token(RIN_OPERATOR op, Location loc)
 Token Token::make_float_token(const std::string& str, Location loc)
 {
         Token tok(TOKEN_FLOAT, str, loc);
-        mpfr_init_set_str(tok.value.float_value, &str[0], 10, MPFR_RNDN);
+        mpfr_init_set_str(tok.value.float_value, str.c_str(), 10, MPFR_RNDN);
         return tok;
 }
 
@@ -180,7 +180,7 @@ void Scanner::acknowledge(Token tok)
         }
         if (is_righthand_op(tok.op())) {
                 rin_error_at(tok.location(), "Unexpected %s",
-                             &operator_name(tok.op())[0]);
+                             operator_name(tok.op()).c_str());
         }
 }
 
@@ -336,7 +336,7 @@ Token Scanner::scan_token()
         if (is_valid_identifier(tokenStr))
                 return Token::make_ident_token(tokenStr, Scanner::location());
 
-        rin_error_at(location(), "Unknown keyword %s", &tokenStr[0]);
+        rin_error_at(location(), "Unknown keyword %s", tokenStr.c_str());
         return make_invalid_token(tokenStr);
 }
 

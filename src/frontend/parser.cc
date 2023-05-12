@@ -521,8 +521,8 @@ public:
         }
 
         // Returns the C-string pointer of the expression for debug.
-        char* str()
-        { return &this->_str[0]; }
+        const char* str()
+        { return this->_str.c_str(); }
 
         // Adds a child to the node
         void add_child(Expression_node* a, Expression_node* b = NULL) {
@@ -737,7 +737,7 @@ Expression* Parser::parse_expression(RIN_OPERATOR terminal)
                         prev_token = token;
                         rin_error_at(token.location(),
                                      "Unresolved expression: reached EOF before expected %s",
-                                     &operator_name(terminal)[0]);
+                                     operator_name(terminal).c_str());
                         __abort_expr_parse(operators, output);
                         return NULL;
 
@@ -748,7 +748,7 @@ Expression* Parser::parse_expression(RIN_OPERATOR terminal)
                         prev_token = token;
                         rin_error_at(token.location(),
                                      "Cannot use %s token as expression value (NOT IMPLEMENTED)",
-                                     &token.classification_as_string()[0]);
+                                     token.classification_as_string().c_str());
                         __abort_expr_parse(operators, output);
                         return NULL;
 
