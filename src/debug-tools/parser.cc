@@ -150,16 +150,16 @@ public:
                 return new Bstatement;
         }
 
-        Bstatement* inc_statement(Bexpression* var)
+        Bstatement* inc_statement(Bexpression* var, Location loc)
         {
-                rin_inform(File::unknown_location(), "CREATED INC STMT\n");
+                rin_inform(loc, "CREATED INC STMT\n");
                 delete var;
                 return new Bstatement;
         }
 
-        Bstatement* dec_statement(Bexpression* var)
+        Bstatement* dec_statement(Bexpression* var, Location loc)
         {
-                rin_inform(File::unknown_location(), "CREATED DEC STMT\n");
+                rin_inform(loc, "CREATED DEC STMT\n");
                 delete var;
                 return new Bstatement;
         }
@@ -201,14 +201,27 @@ public:
         }
 
         Bstatement* for_statement
-        (Bstatement* cond, Bstatement* inc, Scope* scope, Location loc)
+        (Scope* ind_scope, Scope* then, Location loc)
         {
                 rin_inform(loc, "CREATED FOR STATEMENT\n");
-                delete cond;
-                delete inc;
-                delete scope;
+                delete ind_scope;
+                delete then;
 
                 return new Bstatement;
+        }
+
+        // Scope Signals.
+
+        Scope* enter_scope()
+        {
+                rin_inform(File::unknown_location(), "ENTERED SCOPE");
+                return Backend::enter_scope();
+        }
+
+        Scope* leave_scope()
+        {
+                rin_inform(File::unknown_location(), "LEFT SCOPE");
+                return Backend::leave_scope();
         }
 };
 

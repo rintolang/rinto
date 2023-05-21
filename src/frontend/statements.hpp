@@ -66,8 +66,7 @@ public:
         (Expression* cond, Scope* then_block, Location loc);
 
         // Make a for statement
-        static Statement* make_for
-        (Statement* ind_var, Statement* cond, Statement* inc, Location loc);
+        static Statement* make_for(Scope* ind_scope, Location loc);
 
         // Make an expression statement
         static Statement* make_expression(Expression* expr, Location loc);
@@ -185,8 +184,7 @@ public:
                   _var(var)
         {}
 
-        ~Variable_declaration_statement()
-        { delete this->_var; }
+        ~Variable_declaration_statement() {}
 
         Named_object* var()
         { return this->_var; }
@@ -229,25 +227,18 @@ private:
 class For_statement : public Statement
 {
 public:
-        For_statement(Statement* ind_var, Statement* cond,
-                      Statement* inc, Location loc)
-                : Statement(STATEMENT_FOR, loc), _ind_var(ind_var),
-                  _cond(cond), _inc(inc)
+        For_statement(Scope* ind_scope, Location loc)
+                : Statement(STATEMENT_FOR, loc),
+                  _ind_scope(ind_scope)
         {}
 
-        ~For_statement();
+        ~For_statement() {}
 
         void add_statements(Scope* statements)
         { this->_statements = statements; }
 
-        Statement* ind_var()
-        { return this->_ind_var; }
-
-        Statement* cond()
-        { return this->_cond; }
-
-        Statement* inc()
-        { return this->_inc; }
+        Scope* ind_scope()
+        { return this->_ind_scope; }
 
         Scope* statements()
         { return this->_statements; }
@@ -259,20 +250,7 @@ protected:
         Bstatement* do_get_backend(Backend* backend);
 
 private:
-        /*
-         * Induction variable statement.
-         * Evaluate once at start of loop.
-         */
-        Statement* _ind_var;
-
-        // The condition
-        Statement* _cond;
-
-        /*
-         * The increment statement. Can be any expression; it will
-         * run after each iteration.
-         */
-        Statement* _inc;
+        Scope* _ind_scope;
 
         // The statements to execute
         Scope* _statements = NULL;

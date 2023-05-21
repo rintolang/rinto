@@ -20,9 +20,8 @@ Statement* Statement::make_if
 (Expression* cond, Scope* then_block, Location loc)
 { return new If_statement(cond, then_block, loc); }
 
-Statement* Statement::make_for
-(Statement* ind_var, Statement* cond, Statement* inc, Location loc)
-{ return new For_statement(ind_var, cond, inc, loc); }
+Statement* Statement::make_for(Scope* ind_scope, Location loc)
+{ return new For_statement(ind_scope, loc); }
 
 Statement* Statement::make_expression(Expression* expr, Location loc)
 { return new Expression_statement(expr, loc); }
@@ -81,22 +80,7 @@ Bstatement* Variable_declaration_statement::do_get_backend(Backend* backend)
         RIN_ASSERT(backend);
         RIN_ASSERT(this->var());
 
-        // Assert that the variable is not already defined.
-        RIN_ASSERT(backend->current_scope());
-        if (backend->current_scope()->is_defined(this->identifier())) {
-                rin_error_at(this->var()->location(), "Redefinition of '%s'",
-                        this->identifier().c_str());
-                return backend->invalid_statement();
-        }
-
-        // Define the variable.
-        backend->current_scope()->define_obj(this->identifier(),
-                this->location());
-
-        // Build the variable.
         Bvariable* var = backend->variable(this->var());
-
-        // Build the variable declaration statement.
         return backend->var_dec_statement(var);
 }
 
@@ -126,57 +110,9 @@ Bstatement* If_statement::do_get_backend(Backend* backend)
 
 // For_statement implementation
 
-For_statement::~For_statement()
-{
-        delete this->_ind_var;
-        delete this->_cond;
-        delete this->_inc;
-}
-
 Bstatement* For_statement::do_get_backend(Backend* backend)
 {
-        RIN_ASSERT(backend);
-        RIN_ASSERT(this->has_statements());
-
-        backend->enter_scope(this->statements());
-
-        /*
-         * Condition statement may be NULL.
-         *     if not NULL, then it must be conditional.
-         */
-        Statement* cond_stmt = this->cond();
-        Bstatement* cond_bstmt = NULL;
-        if (cond_stmt != NULL) {
-                /*
-                 * The conditional expression is passed as an expression
-                 * statement. An assertion will fail if it's not an
-                 * expression statement.
-                 */
-                Expression_statement* cond_expr = cond_stmt->expression_statement();
-                RIN_ASSERT(cond_expr->expr());
-
-                // Assert that it's conditional.
-                RIN_ASSERT(cond_expr->expr()->classification() ==
-                           Expression::EXPRESSION_CONDITIONAL);
-
-                cond_bstmt = cond_stmt->get_backend(backend);
-        }
-
-        /*
-         * Increment statement may be NULL.
-         *     if not NULL, then it must strictly be increment/decrement.
-         */
-        Statement* inc_stmt = this->inc();
-        Bstatement* inc_bstmt = NULL;
-        if (inc_stmt != NULL) {
-                RIN_ASSERT(inc_stmt->classification() == STATEMENT_INCDEC);
-                inc_bstmt = inc_stmt->get_backend(backend);
-        }
-
-        backend->leave_scope();
-
-        // Build backend for-loop statement.
-        return backend->for_statement(cond_bstmt, inc_bstmt,
+        return backend->for_statement(this->ind_scope(),
                 this->statements(), this->location());
 }
 
@@ -195,10 +131,8 @@ Bstatement* Inc_dec_statement::do_get_backend(Backend* backend)
         // Build expression.
         Bexpression* bexpr = this->expr()->get_backend(backend);
 
-        if (this->is_inc())
-                return backend->inc_statement(bexpr);
-
-        return backend->dec_statement(bexpr);
+        return (this->is_inc()) ? backend->inc_statement(bexpr, this->location()) :
+                backend->dec_statement(bexpr, this->location());
 }
 
 // Expression_statement implementation

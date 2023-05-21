@@ -160,6 +160,8 @@ Statement* Parser::parse_for_statement()
         RIN_ASSERT(for_rid.classification() == Token::TOKEN_RID);
         RIN_ASSERT(for_rid.rid() == RID_FOR);
 
+        Scope* ind_scope = this->backend()->enter_scope();
+
         // Induction statement
         Token semicolon = this->_scanner->peek_token();
         Statement* ind_stmt = NULL;
@@ -232,8 +234,15 @@ Statement* Parser::parse_for_statement()
                         return Statement::make_invalid(ident.location());
                 }
 
-                Expression* ref = Expression::make_var_reference
-                        (new Named_object(*ident.identifier(), ident.location()), ident.location());
+                Named_object* obj = this->backend()->current_scope()->lookup(*ident.identifier());
+                if (!obj) {
+                        rin_error_at(ident.location(), "'%s' is undefined", ident.str());
+                        delete ind_stmt;
+                        delete cond_stmt;
+                        return Statement::make_invalid(ident.location());
+                }
+
+                Expression* ref = Expression::make_var_reference(obj, ident.location());
                 Expression* unary = Expression::make_unary(oper.op(), ref, oper.location());
 
                 incdec_stmt = (oper.op() == OPER_INC) ? Statement::make_inc(unary) :
@@ -253,19 +262,24 @@ Statement* Parser::parse_for_statement()
                 return Statement::make_invalid(lbrace.location());
         }
 
-        // Add induction statement to for-loop scope.
-        Scope* loop_scope = this->_backend->enter_scope();
-        if (ind_stmt) loop_scope->push_statement(ind_stmt->get_backend(this->_backend));
+        // Add induction, condition, inc statement to for-loop scope.
+        if (ind_stmt) this->backend()->push_statement
+                (ind_stmt->get_backend(this->backend()));
 
-        this->_backend->enter_scope();
+        if (cond_stmt) this->backend()->push_statement
+                (cond_stmt->get_backend(this->backend()));
+
+        if (incdec_stmt) this->backend()->push_statement
+                (incdec_stmt->get_backend(this->backend()));
+
+        Scope* loop_scope = this->_backend->enter_scope();
 
         // Parse statements in for-loop scope.
         this->parse(false);
         this->_backend->leave_scope();
 
         // Create for-loop statement
-        For_statement* loop_stmt = new For_statement(ind_stmt, cond_stmt,
-                incdec_stmt, for_rid.location());
+        For_statement* loop_stmt = new For_statement(ind_scope, for_rid.location());
         loop_stmt->add_statements(loop_scope);
 
         return loop_stmt;
@@ -297,12 +311,30 @@ Statement* Parser::parse_var_dec_statement()
                 this->_scanner->next_token();
 
                 // Create var declaration
-                Named_object* obj = new Named_object(*ident.identifier(), ident.location());
-                return  Statement::make_variable_declaration(obj);
+                Named_object* obj = this->backend()->current_scope()->
+                        define_obj(*ident.identifier(), ident.location());
+
+                if (!obj) {
+                        rin_error_at(ident.location(), "Redefinition of '%s'",
+                                ident.str());
+                        return Statement::make_invalid(ident.location());
+                }
+
+                return Statement::make_variable_declaration(obj);
         }
 
         // Create a declaration and then parse it's assignment
-        Named_object* obj = new Named_object(*ident.identifier(), ident.location());
+        Named_object* obj = this->backend()->current_scope()->
+                define_obj(*ident.identifier(), ident.location());
+
+        // Redefinition.
+        if (!obj) {
+                rin_error_at(ident.location(), "Redefinition of '%s'",
+                             ident.str());
+                return Statement::make_invalid(ident.location());
+        }
+
+
         Statement* declr = Statement::make_variable_declaration(obj);
         Statement* assign = this->parse_assignment_statement();
 
@@ -330,8 +362,14 @@ Statement* Parser::parse_assignment_statement()
                 return Statement::make_invalid(assign.location());
         }
 
-        // Create left-hand variable reference expression
-        Named_object* obj = new Named_object(*ident.identifier(), ident.location());
+        // Create left-hand variable reference expression.
+        Named_object* obj = this->backend()->current_scope()->lookup(*ident.identifier());
+        if (!obj) {
+                rin_error_at(ident.location(), "'%s' is undeclared",
+                        ident.str());
+                return Statement::make_invalid(ident.location());
+        }
+
         Expression* lhs_ref = Expression::make_var_reference(obj, ident.location());
 
         // Parse assignment to binary expression
@@ -353,7 +391,8 @@ Statement* Parser::parse_inc_dec_statement()
         EXPECT_SEMICOLON_ERR(this->_scanner->next_token());
 
         // Create var reference
-        Named_object* obj = new Named_object(*ident.identifier(), ident.location());
+        Named_object* obj = this->backend()->current_scope()->
+                lookup(*ident.identifier());
         Expression* var_reference = Expression::make_var_reference
                 (obj, ident.location());
 
@@ -361,11 +400,8 @@ Statement* Parser::parse_inc_dec_statement()
         Expression* unary = Expression::make_unary
                 (op.op(), var_reference, ident.location());
 
-        // Create statement
-        if (op.op() == OPER_INC)
-                return Statement::make_inc(unary);
-
-        return Statement::make_dec(unary);
+        return (op.op() == OPER_INC) ? Statement::make_inc(unary) :
+                Statement::make_dec(unary);
 }
 
 // --- Expressions ---
