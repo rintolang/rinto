@@ -203,8 +203,7 @@ public:
                   _variable(variable)
         {}
 
-        ~Var_expression()
-        { delete _variable; }
+        ~Var_expression() {}
 
         // Return the variable
         Named_object* named_object() const

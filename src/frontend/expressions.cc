@@ -38,8 +38,10 @@ Bexpression* Unary_expression::do_get_backend(Backend* backend)
         RIN_ASSERT(this->op() == OPER_INC || this->op() == OPER_DEC);
 
         // Can only perform a unary operation with a var reference
-        RIN_ASSERT(this->operand()->classification() ==
-                   Expression::EXPRESSION_VAR_REFERENCE);
+        if (this->operand()->classification() != Expression::EXPRESSION_VAR_REFERENCE) {
+                rin_error_at(this->location(), "lvalue required as increment/decrement operand");
+                return backend->invalid_expression();
+        }
 
         Bexpression* expr = this->operand()->get_backend(backend);
         RIN_ASSERT(expr);
@@ -97,16 +99,6 @@ Bexpression* Var_expression::do_get_backend(Backend* backend) {
         Named_object* obj = this->named_object();
         RIN_ASSERT(obj);
 
-        // Check if the identifier is defined in the current scope.
-        RIN_ASSERT(backend->current_scope());
-        bool is_defined = backend->current_scope()->is_defined(obj->identifier());
-
-        if (!is_defined) {
-                rin_error_at(obj->location(), "'%s' is undeclared",
-                        obj->identifier().c_str());
-                return backend->invalid_expression();
-        }
-
         // Create the backend variable reference.
         Bvariable* var = backend->variable(obj);
         return backend->var_reference(var, this->location());
@@ -123,7 +115,6 @@ Bexpression* Conditional_expression::do_get_backend(Backend* backend)
         Expression_classification cls = this->condition()->classification();
         RIN_ASSERT(cls == EXPRESSION_FLOAT || cls == EXPRESSION_BINARY ||
                    cls == EXPRESSION_UNARY || cls == EXPRESSION_VAR_REFERENCE);
-
 
         // Build backend expression.
         Bexpression* cond = this->condition()->get_backend(backend);

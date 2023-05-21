@@ -209,15 +209,9 @@ public:
          * Enters a new scope nested below the previous current scope.
          * Always returns the most current scope.
          */
-        Scope* enter_scope()
+        virtual Scope* enter_scope()
         {
                 this->_current_scope = new Scope(this->_current_scope);
-                return this->_current_scope;
-        }
-
-        Scope* enter_scope(Scope* scope)
-        {
-                this->_current_scope = scope;
                 return this->_current_scope;
         }
 
@@ -225,7 +219,7 @@ public:
          * Exits out of the current scope and into the parent scope.
          * Always returns the most current scope.
          */
-        Scope* leave_scope()
+        virtual Scope* leave_scope()
         {
                 this->_current_scope = this->_current_scope->parent();
                 return this->_current_scope;
@@ -295,8 +289,8 @@ public:
          * Create an increment/decrement statement. Expression must be a
          * unary increment/decrement expression.
          */
-        virtual Bstatement* inc_statement(Bexpression*) = 0;
-        virtual Bstatement* dec_statement(Bexpression*) = 0;
+        virtual Bstatement* inc_statement(Bexpression*, Location) = 0;
+        virtual Bstatement* dec_statement(Bexpression*, Location) = 0;
 
         /*
          * Returns an if-statement. The expression should be a conditional
@@ -312,7 +306,7 @@ public:
          * must be parsed by this function.
          */
         virtual Bstatement* for_statement
-        (Bstatement* cond, Bstatement* inc, Scope*, Location) = 0;
+        (Scope* ind_scope, Scope* then, Location) = 0;
 
         /*
          * Returns an expression wrapped as a statement. The expression must
