@@ -32,7 +32,7 @@
 
 #include "diagnostic.hpp"
 
-static std::string mformat_value() 
+static std::string mformat_value()
 { return std::string(strerror(errno)); }
 
 /*
