@@ -32,3 +32,25 @@ void rin_be_get_quotechars(const char** open_quo, const char** close_quo)
         *open_quo =  &open_quote[0];
         *close_quo = &close_quote[0];
 }
+
+// See: https://hg.mozilla.org/mozilla-central/file/98fa9c0cff7a/js/src/jsutil.cpp#l66
+void do_recoverable_abort()
+{
+#if defined(WIN32)
+        /*
+         * We used to call DebugBreak() on Windows, but amazingly, it causes
+         * the MSVS 2010 debugger not to be able to recover a call stack.
+         */
+        *((int *) NULL) = 0;
+        exit(3);
+#elif defined(__APPLE__)
+        /*
+         * On Mac OS X, Breakpad ignores signals. Only real Mach exceptions are
+         * trapped.
+         */
+        *((int *) NULL) = 0;  /* To continue from here in GDB: "return" then "continue". */
+        raise(SIGABRT);  /* In case above statement gets nixed by the optimizer. */
+#else
+        raise(SIGABRT);  /* To continue from here in GDB: "signal 0". */
+#endif
+}
