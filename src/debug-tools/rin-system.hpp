@@ -3,9 +3,21 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <mpfr.h>
+#include <unordered_map>
+#include <string>
+#include <vector>
+#include <regex>
+#include <iostream>
+#include <stack>
+#include <sstream>
 
 #ifdef WIN32
-#include "jswin.h"
+#ifdef XP_WIN
+#include <windows.h>
+#undef GetProp
+#undef SetProp
+#endif // XP_WIN
 #else
 #include <signal.h>
 #endif // WIN32

@@ -1,8 +1,7 @@
 #ifndef RIN_OPERATORS_HPP
 #define RIN_OPERATORS_HPP
 
-#include <unordered_map>
-#include <string>
+#include <rin-system.hpp>
 
 enum RIN_OPERATOR {
         OPER_ILLEGAL = 0,

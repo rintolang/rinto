@@ -201,10 +201,12 @@ public:
         }
 
         Bstatement* for_statement
-        (Scope* ind_scope, Scope* then, Location loc)
+        (Bstatement* ind, Bstatement* cond, Bstatement* inc, Scope* then, Location loc)
         {
                 rin_inform(loc, "CREATED FOR STATEMENT\n");
-                delete ind_scope;
+                delete ind;
+                delete cond;
+                delete inc;
                 delete then;
 
                 return new Bstatement;

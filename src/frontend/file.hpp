@@ -1,9 +1,8 @@
 #ifndef RIN_FILE_HPP
 #define RIN_FILE_HPP
 
-#include <fstream>
-#include <string>
 #include "backend.hpp"
+#include <fstream>
 
 #ifndef EOF
 #define EOF (-1)
