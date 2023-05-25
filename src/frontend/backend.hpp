@@ -1,19 +1,7 @@
 #ifndef RIN_BACKEND_HPP
 #define RIN_BACKEND_HPP
 
-// MPFR must remain first
-#include <mpfr.h>
-
 #include <rin-system.hpp>
-
-#include <string>
-#include <stack>
-#include <regex>
-#include <deque>
-#include <stdio.h>
-#include <vector>
-#include <unordered_map>
-#include <stdexcept>
 #include "operators.hpp"
 
 #define RIN_ASSERT(EXPR)  BE_ASSERT(EXPR)
@@ -36,6 +24,19 @@ struct Location {
         int column;
         std::string filename;
 };
+
+static bool operator==(const Location& lhs, const Location& rhs)
+{
+        if (lhs.offset != rhs.offset)
+                return false;
+        if (lhs.line != rhs.line)
+                return false;
+        if (lhs.column != rhs.column)
+                return false;
+        if (lhs.filename != rhs.filename)
+                return false;
+        return true;
+}
 
 // Diagnostics.hpp
 extern void rin_error_at(const Location, const char* fmt, ...);
@@ -91,16 +92,25 @@ public:
                 }
         }
 
-        // List of statements contained within the scope
+        // List of statements contained within the scope.
         typedef std::vector<Bstatement*> Statement_list;
 
-        // Returns the scope's parent
+        // Map of variables within the scope.
+        typedef std::unordered_map<std::string, Named_object*> Var_map;
+
+        // Returns the scope's parent.
         Scope* parent()
         { return this->_parent; }
 
-        // Lookup a defined Named_object by its string. Returns NULL
+        // Lookup a defined Named_object by its string. Returns NULL.
         Named_object* lookup(const std::string& ident)
-        { return this->ident_map[ident]; }
+        {
+                Named_object* x = this->ident_map[ident];
+                if (!x && this->parent())
+                        return this->parent()->lookup(ident);
+
+                return x;
+        }
 
         // Test whether an identifier string has been defined.
         bool is_defined(const std::string& ident)
@@ -122,7 +132,7 @@ public:
         Named_object* define_obj(const std::string& ident, Location loc)
         {
                 if (this->is_defined(ident)) {
-                        rin_error_at(loc, "Duplicate definition of %s", &(ident)[0]);
+                        rin_error_at(loc, "Redefinition of '%s'", &(ident)[0]);
                         return NULL;
                 }
 
@@ -142,9 +152,13 @@ public:
         unsigned int size()
         { return this->_statements.size(); }
 
-        // Return all statements
+        // Return all statements.
         Statement_list* statements()
         { return &this->_statements; }
+
+        // Return all variables.
+        Var_map* variables()
+        { return &this->ident_map; }
 
         // Inserts a statement into the statement list
         void push_statement(Bstatement* state)
@@ -170,10 +184,7 @@ public:
 
 private:
         Scope* _parent;
-
-        std::unordered_map
-        <std::string, Named_object*> ident_map;
-
+        Var_map ident_map;
         Statement_list _statements;
 };
 
@@ -306,7 +317,7 @@ public:
          * must be parsed by this function.
          */
         virtual Bstatement* for_statement
-        (Scope* ind_scope, Scope* then, Location) = 0;
+        (Bstatement*, Bstatement*, Bstatement*, Scope*, Location) = 0;
 
         /*
          * Returns an expression wrapped as a statement. The expression must
