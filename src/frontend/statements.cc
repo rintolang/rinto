@@ -20,8 +20,9 @@ Statement* Statement::make_if
 (Expression* cond, Scope* then_block, Location loc)
 { return new If_statement(cond, then_block, loc); }
 
-Statement* Statement::make_for(Scope* ind_scope, Location loc)
-{ return new For_statement(ind_scope, loc); }
+Statement* Statement::make_for
+(Statement* ind, Statement* cond, Statement* inc, Location loc)
+{ return new For_statement(ind, cond, inc, loc); }
 
 Statement* Statement::make_expression(Expression* expr, Location loc)
 { return new Expression_statement(expr, loc); }
@@ -110,9 +111,22 @@ Bstatement* If_statement::do_get_backend(Backend* backend)
 
 // For_statement implementation
 
+For_statement::~For_statement()
+{
+        delete this->_ind;
+        delete this->_cond;
+        delete this->_inc;
+}
+
 Bstatement* For_statement::do_get_backend(Backend* backend)
 {
-        return backend->for_statement(this->ind_scope(),
+        RIN_ASSERT(backend);
+
+        Bstatement* bind  = (this->_ind)  ? this->_ind->get_backend(backend)  : NULL;
+        Bstatement* bcond = (this->_cond) ? this->_cond->get_backend(backend) : NULL;
+        Bstatement* binc  = (this->_inc)  ? this->_inc->get_backend(backend)  : NULL;
+
+        return backend->for_statement(bind, bcond, binc,
                 this->statements(), this->location());
 }
 
