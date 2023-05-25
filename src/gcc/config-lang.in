@@ -1,0 +1,6 @@
+language="rinto"
+compilers="grin\$(exeext)"
+target_libs=""
+build_by_default="no"
+gtfiles="\$(srcdir)/rinto/rin1.cc"
+lang_requires_boot_languages=c++

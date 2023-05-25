@@ -1,0 +1,99 @@
+# This file provides the language dependent support in the main Makefile.
+
+# Installation name.
+GRIN_INSTALL_NAME := $(shell echo grin|sed '$(program_trasform_name)')
+GRIN_TARGET_INSTALL_NAME := $(target_noncanonical)-$(shell echo grin|sed '$(program_transform_name)')
+
+# The name for selecting rinto in LANGUAGES.
+rinto: rin1$(exeext)
+rinto.serial = rin1$(exeext)
+
+.PHONY: rinto
+
+GRIN_OBJS = $(GCC_OBJS) rinto/rinspec.o
+
+grin$(exeext): $(GRIN_OBJS) $(EXTRA_GCC_OBJS) libcommon-target.a $(LIBDEPS)
+	+$(LINKER) $(ALL_LINKERFLAGS) $(LDFLAGS) -o $@      		      \
+		$(GRIN_OBJS) $(EXTRA_GCC_OBJS) libcommon-target.a 	      \
+		$(EXTRA_GCC_LIBS) $(LIBS)
+
+RINTO_OBJS =                     \
+	rinto/diagnostic.o       \
+	rinto/expressions.o      \
+	rinto/file.o             \
+	rinto/operators.o        \
+	rinto/parser.o           \
+	rinto/scanner.o          \
+	rinto/statements.o       \
+	rinto/gcc-backend.o      \
+	rinto/gcc-diagnostics.o  \
+	rinto/rin1.o             \
+	rinto/rinspec.o
+
+rin1$(exeext): $(RINTO_OBJS) attribs.o $(BACKEND) $(LIBDEPS)
+	+$(LLINKER) $(ALL_LINKERFLAGS) $(LDFLAGS) -o $@ \
+	$(RINTO_OBJS) attribs.o $(BACKEND) $(LIBS) $(BACKENDLIBS)
+
+# Documentation & Misc. hooks (unused).
+
+rinto.install-man:
+rinto.install-info:
+rinto.install-pdf:
+rinto.install-plugin:
+rinto.install-html:
+rinto.info:
+rinto.dvi:
+rinto.pdf:
+rinto.html:
+rinto.man:
+rinto.mostlyclean:
+rinto.clean:
+rinto.distclean:
+rinto.maintainer-clean:
+
+# Build hooks.
+
+rinto.all.cross:
+
+rinto.start.encap: grin$(exeext)
+rinto.rest.encap:
+rinto.tags: force
+	cd $(srcdir)/rinto; \
+	$(ETAGS) -o TAGS.sub *.cc *.hpp *.h frontend/*.hpp frontend/*.h frontend/*.cc; \
+	$(ETAGS) --include TAGS.sub --include ../TAGS.sub
+
+selftest-rinto:
+
+# Install hooks.
+
+rinto.install-common: installdirs
+	-rm -f $(DESTDIR)$(bindir)/$(GRIN_INSTALL_NAME)$(exeext)
+	$(INSTALL_PROGRAM) grin$(exeext) $(DESTDIR)$(bindir)/$(GRIN_INSTALL_NAME)$(exeext)
+	rm -f $(DESTDIR)$(bindir)/$(GRIN_TARGET_INSTALL_NAME)$(exeext); 											\
+	( cd $(DESTDIR)$(bindir) &&                                                           \
+      $(LN) $(GRIN_INSTALL_NAME)$(exeext) $(GRIN_TARGET_INSTALL_NAME)$(exeext) ); 			\
+
+rinto.uninstall:
+	-rm -f grin$(exeext) rin1$(exeext)
+	-rm -f $(RINTO_OBJS)
+
+# Stage hooks.
+
+rinto.stage1: stage1-start
+	-mv rinto/*$(objext) stage1/rinto
+rinto.stage2: stage2-start
+	-mv rinto/*$(objext) stage2/rinto
+rinto.stage3: stage3-start
+	-mv rinto/*$(objext) stage3/rinto
+rinto.stage4: stage4-start
+	-mv rinto/*$(objext) stage4/rinto
+rinto.stageprofile: stageprofile-start
+	-mv rinto/*$(objext) stageprofile/rinto
+rinto.stagefeedback: stagefeedback-start
+	-mv rinto/*$(objext) stagefeedback/rinto
+
+RINTOINCLUDES = -I $(srcdir)/rinto -I $(srcdir)/rinto/frontend
+
+rinto/%.o: rinto/frontend/%.cc
+	$(COMPILE) $(RINTOINCLUDES) $<
+	$(POSTCOMPILE)
