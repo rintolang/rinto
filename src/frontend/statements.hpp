@@ -39,6 +39,10 @@ public:
         Location location() const
         { return this->_location; }
 
+        // Change location.
+        void set_location(Location loc)
+        { this->_location = loc; }
+
         // Set whether this statement is invalid
         void set_is_invalid()
         { this->_classification = STATEMENT_INVALID; }
@@ -66,7 +70,8 @@ public:
         (Expression* cond, Scope* then_block, Location loc);
 
         // Make a for statement
-        static Statement* make_for(Scope* ind_scope, Location loc);
+        static Statement* make_for
+        (Statement* ind, Statement* cond, Statement* inc, Location loc);
 
         // Make an expression statement
         static Statement* make_expression(Expression* expr, Location loc);
@@ -227,18 +232,25 @@ private:
 class For_statement : public Statement
 {
 public:
-        For_statement(Scope* ind_scope, Location loc)
+        For_statement
+        (Statement* ind, Statement* cond, Statement* inc, Location loc)
                 : Statement(STATEMENT_FOR, loc),
-                  _ind_scope(ind_scope)
+                  _ind(ind), _cond(cond), _inc(inc)
         {}
 
-        ~For_statement() {}
+        ~For_statement();
 
         void add_statements(Scope* statements)
         { this->_statements = statements; }
 
-        Scope* ind_scope()
-        { return this->_ind_scope; }
+        Statement* ind()
+        { return this->_ind; }
+
+        Statement* cond()
+        { return this->_cond; }
+
+        Statement* inc()
+        { return this->_inc; }
 
         Scope* statements()
         { return this->_statements; }
@@ -250,7 +262,10 @@ protected:
         Bstatement* do_get_backend(Backend* backend);
 
 private:
-        Scope* _ind_scope;
+        // Induction, condition, increment statements.
+        Statement* _ind;
+        Statement* _cond;
+        Statement* _inc;
 
         // The statements to execute
         Scope* _statements = NULL;

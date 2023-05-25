@@ -160,7 +160,7 @@ Statement* Parser::parse_for_statement()
         RIN_ASSERT(for_rid.classification() == Token::TOKEN_RID);
         RIN_ASSERT(for_rid.rid() == RID_FOR);
 
-        Scope* ind_scope = this->backend()->enter_scope();
+        this->backend()->enter_scope();
 
         // Induction statement
         Token semicolon = this->_scanner->peek_token();
@@ -173,7 +173,7 @@ Statement* Parser::parse_for_statement()
 
         /*
          * If the induction statement is an if-statement or for-loop, then we
-         * still need to check if the next token is a semicolon.
+         * to manually check if the next token is a semicolon.
          */
         if(ind_stmt && (ind_stmt->classification() == Statement::STATEMENT_FOR ||
                         ind_stmt->classification() == Statement::STATEMENT_IF)) {
@@ -188,7 +188,7 @@ Statement* Parser::parse_for_statement()
                 }
         }
 
-        // Condition -- cannot be empty semicolon
+        // Condition.
         semicolon = this->_scanner->peek_token();
         Statement* cond_stmt = NULL;
         if (!EXPECT_SEMICOLON(semicolon)) {
@@ -211,7 +211,7 @@ Statement* Parser::parse_for_statement()
         // Increment
         Token lbrace = this->_scanner->peek_token();
         Statement* incdec_stmt = NULL;
-        if (!EXPECT_LEFT_BRACE(lbrace)) {
+        if (!EXPECT_LEFT_BRACE(lbrace) && lbrace.classification() == Token::TOKEN_IDENT) {
                 Token ident = this->_scanner->next_token();
                 Token oper = this->_scanner->next_token();
 
@@ -262,24 +262,14 @@ Statement* Parser::parse_for_statement()
                 return Statement::make_invalid(lbrace.location());
         }
 
-        // Add induction, condition, inc statement to for-loop scope.
-        if (ind_stmt) this->backend()->push_statement
-                (ind_stmt->get_backend(this->backend()));
-
-        if (cond_stmt) this->backend()->push_statement
-                (cond_stmt->get_backend(this->backend()));
-
-        if (incdec_stmt) this->backend()->push_statement
-                (incdec_stmt->get_backend(this->backend()));
-
-        Scope* loop_scope = this->_backend->enter_scope();
-
         // Parse statements in for-loop scope.
+        Scope* loop_scope = this->_backend->enter_scope();
         this->parse(false);
         this->_backend->leave_scope();
 
         // Create for-loop statement
-        For_statement* loop_stmt = new For_statement(ind_scope, for_rid.location());
+        For_statement* loop_stmt = new For_statement(ind_stmt, cond_stmt,
+                incdec_stmt, for_rid.location());
         loop_stmt->add_statements(loop_scope);
 
         return loop_stmt;
@@ -314,12 +304,7 @@ Statement* Parser::parse_var_dec_statement()
                 Named_object* obj = this->backend()->current_scope()->
                         define_obj(*ident.identifier(), ident.location());
 
-                if (!obj) {
-                        rin_error_at(ident.location(), "Redefinition of '%s'",
-                                ident.str());
-                        return Statement::make_invalid(ident.location());
-                }
-
+                if (!obj) return Statement::make_invalid(ident.location());
                 return Statement::make_variable_declaration(obj);
         }
 
@@ -328,12 +313,7 @@ Statement* Parser::parse_var_dec_statement()
                 define_obj(*ident.identifier(), ident.location());
 
         // Redefinition.
-        if (!obj) {
-                rin_error_at(ident.location(), "Redefinition of '%s'",
-                             ident.str());
-                return Statement::make_invalid(ident.location());
-        }
-
+        if (!obj) return Statement::make_invalid(ident.location());
 
         Statement* declr = Statement::make_variable_declaration(obj);
         Statement* assign = this->parse_assignment_statement();
@@ -416,17 +396,24 @@ public:
         // The node type
         enum node_type { INVALID_NODE, OPERATOR_NODE, VAR_NODE, FLOAT_NODE };
 
-        Expression_node(Token token)
+        Expression_node(Token token, Backend* backend)
         {
                 this->_location = token.location();
                 this->_str = token.string();
+                this->_backend = backend;
 
                 Token::Classification cls = token.classification();
                 if (cls == Token::TOKEN_IDENT) {
                         _type = VAR_NODE;
 
-                        Named_object* obj = new Named_object
-                                (*token.identifier(),token.location());
+                        Named_object* obj = this->_backend->current_scope()->
+                                lookup(*token.identifier());
+
+                        if (!obj) {
+                                rin_error_at(token.location(), "'%s' is undefined", token.str());
+                                _type = INVALID_NODE;
+                                return;
+                        }
 
                         Expression* var_ref = Expression::make_var_reference
                                 (obj, token.location());
@@ -452,6 +439,9 @@ public:
                         _type = INVALID_NODE;
                 }
         }
+
+        Backend* backend()
+        { return this->_backend; }
 
         // Return the rightmost child or itself.
         Expression_node* rightmost_child()
@@ -488,7 +478,7 @@ public:
          * Abort is for when expression parsing fails and we
          * can safely delete the underlying expression.
          */
-        void abort()
+        void expr_abort()
         {
                 if (_type != OPERATOR_NODE && _type != INVALID_NODE)
                         delete this->_value.expr;
@@ -595,6 +585,8 @@ private:
 
         Location _location;
 
+        Backend* _backend;
+
         // Own str
         std::string _str;
 
@@ -636,14 +628,14 @@ void __abort_expr_parse
 {
         // Abort operator stack
         while(!op.empty()) {
-                op.top()->abort();
+                op.top()->expr_abort();
                 delete op.top();
                 op.pop();
         }
 
         // Abort output queue
         while (!out.empty()) {
-                out.front()->abort();
+                out.front()->expr_abort();
                 delete out.front();
                 out.pop_front();
         }
@@ -657,7 +649,7 @@ Expression_node* __parse_ast_node(std::deque<Expression_node*>& output, bool& pr
         output.pop_back();
 
         if (child->type() == Expression_node::INVALID_NODE) {
-                child->abort();
+                child->expr_abort();
                 delete child;
                 return NULL;
         }
@@ -669,7 +661,7 @@ Expression_node* __parse_ast_node(std::deque<Expression_node*>& output, bool& pr
         // --- Child is an operator ---
         Expression_node* right = __parse_ast_node(output, printed);
         if (!right) {
-                child->abort();
+                child->expr_abort();
                 delete child;
                 return NULL;
         }
@@ -685,7 +677,7 @@ Expression_node* __parse_ast_node(std::deque<Expression_node*>& output, bool& pr
          */
         Expression_node* left = __parse_ast_node(output, printed);
         if (!left) {
-                child->abort();
+                child->expr_abort();
                 if (!printed) {
                         rin_error_at(child->location(),
                                      "Invalid type argument of %s",
@@ -734,7 +726,7 @@ Expression* Parser::parse_expression(RIN_OPERATOR terminal)
 
                 case Token::TOKEN_FLOAT:
                 case Token::TOKEN_IDENT:
-                        node = new Expression_node(token);
+                        node = new Expression_node(token, this->backend());
                         break;
 
                 case Token::TOKEN_EOL:
@@ -809,6 +801,7 @@ Expression* Parser::parse_expression(RIN_OPERATOR terminal)
                 if (node->is_invalid()) {
                         // Error already issued by Expression_node constructor
                         __abort_expr_parse(operators, output);
+                        this->_scanner->next_token();
                         return NULL;
                 }
 
