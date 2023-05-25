@@ -32,9 +32,6 @@
 
 #include "diagnostic.hpp"
 
-static std::string mformat_value()
-{ return std::string(strerror(errno)); }
-
 /*
  * Rewrite a format string to expand any extensions not
  * supported by sprintf(). See comments in diagnostics.hpp
@@ -58,26 +55,11 @@ static std::string expand_format(const char* fmt)
                         ss << "%";
                         break;
                 }
-                case 'm': {
-                        ss << mformat_value();
-                        break;
-                }
                 case '<': {
                         ss << rin_open_quote();
                         break;
                 }
                 case '>': {
-                        ss << rin_close_quote();
-                        break;
-                }
-                case 'q': {
-                        ss << rin_open_quote();
-                        c++;
-                        if (*c == 'm') {
-                                ss << mformat_value();
-                        } else {
-                                ss << "%" << *c;
-                        }
                         ss << rin_close_quote();
                         break;
                 }
