@@ -34,13 +34,11 @@
 #ifndef RIN_DIAGNOSTICS_HPP
 #define RIN_DIAGNOSTICS_HPP
 
-#include <sstream>
-#include <cstdarg>
-#include <string>
-#include <cstdio>
-
 #include "backend.hpp"
 #include "file.hpp"
+
+#include <cstdarg>
+#include <cstdio>
 
 #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 1)
 #define RIN_ATTRIBUTE_GCC_DIAG(m, n) __attribute__ ((__format__ (__gcc_tdiag__, m, n))) __attribute__ ((__nonnull__ (m)))
