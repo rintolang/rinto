@@ -32,17 +32,17 @@ public:
         Classification classification() const
         { return _classification; }
 
-        Location location()
+        Location location() const
         { return this->_location; }
 
         // Return the token's classification as a string. For debugging.
-        std::string classification_as_string();
+        std::string classification_as_string() const;
 
         // Return the token as a string
-        char* str()
-        { return &this->token_string[0]; }
+        const char* str() const
+        { return this->token_string.c_str(); }
 
-        std::string string()
+        std::string string() const
         { return this->token_string; }
 
         // Custom Token Type constructors

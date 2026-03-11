@@ -194,7 +194,7 @@ public:
         Named_object* var()
         { return this->_var; }
 
-        const std::string identifier();
+        const std::string& identifier() const;
 
 protected:
         Bstatement* do_get_backend(Backend* backend);

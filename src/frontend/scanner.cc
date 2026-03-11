@@ -135,7 +135,7 @@ std::string rid_as_string(RID rid)
         }
 }
 
-std::string Token::classification_as_string()
+std::string Token::classification_as_string() const
 {
         switch (this->_classification) {
         case TOKEN_INVALID:
