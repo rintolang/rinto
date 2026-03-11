@@ -1,5 +1,16 @@
+// backend.hpp - Abstract backend interface, scope management, and named objects
 #ifndef RIN_BACKEND_HPP
 #define RIN_BACKEND_HPP
+
+/*
+ * Memory Ownership Model:
+ * - AST nodes (Expression, Statement) are allocated via factory methods (make_*)
+ * - Compound nodes own their children and delete them in destructors
+ * - Backend types (Bexpression, Bstatement, Bvariable) are allocated by Backend
+ *   methods and deleted by the scope or by callers
+ * - Scopes own their Named_objects and Bstatements
+ * - Future: consider std::unique_ptr for clearer ownership semantics (C++14)
+ */
 
 #include <rin-system.hpp>
 #include "operators.hpp"

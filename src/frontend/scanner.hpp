@@ -1,3 +1,4 @@
+// scanner.hpp - Lexical analyzer for the Rinto programming language
 #ifndef RIN_SCANNER_HPP
 #define RIN_SCANNER_HPP
 

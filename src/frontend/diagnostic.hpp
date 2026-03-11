@@ -106,4 +106,11 @@ extern void rin_be_fatal_error(const Location, const std::string& errmsg);
 extern void rin_be_inform(const Location, const std::string& infomsg);
 extern void rin_be_get_quotechars(const char** open_quote, const char** close_quote);
 
+/*
+ * Warning level controls which warnings are reported.
+ * Only warnings with opt <= rin_warning_level are emitted.
+ * Default is 0 (report only level-0 warnings).
+ */
+extern int rin_warning_level;
+
 #endif // RIN_DIAGNOSTICS_HPP

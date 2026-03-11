@@ -1,3 +1,4 @@
+// statements.cc - Statement factory methods and backend code generation
 #include "statements.hpp"
 
 Statement* Statement::make_invalid(Location loc)
@@ -133,6 +134,11 @@ For_statement::~For_statement()
         delete this->_ind;
         delete this->_cond;
         delete this->_inc;
+
+        // _statements is owned by For_statement, set via add_statements().
+        // The Scope* is not managed by Backend's scope stack after
+        // leave_scope() is called in parse_for_statement/parse_while_statement.
+        delete this->_statements;
 }
 
 Bstatement* For_statement::do_get_backend(Backend* backend)

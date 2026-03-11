@@ -1,3 +1,4 @@
+// operators.cc - Operator precedence table, lookup map, and name conversion
 #include "operators.hpp"
 
 /*

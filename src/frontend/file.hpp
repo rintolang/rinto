@@ -1,3 +1,4 @@
+// file.hpp - Source file I/O and location tracking
 #ifndef RIN_FILE_HPP
 #define RIN_FILE_HPP
 

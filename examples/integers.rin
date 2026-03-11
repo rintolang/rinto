@@ -1,0 +1,5 @@
+// integers.rin - Demonstrates integer variable support
+
+int x = 42
+int y = 0xFF
+int z = x + y

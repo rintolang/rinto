@@ -1,8 +1,5 @@
+// parser.cc - Recursive descent parser and AST construction
 #include "parser.hpp"
-
-/*
- * TODO: for-loop increment statement parses expressions.
- */
 
 Parser::Parser(Scanner* scanner, Backend* backend)
 {
@@ -152,8 +149,25 @@ Statement* Parser::parse_next()
         }
 
 is_invalid_statement:
-        this->_scanner->next_token();
-        this->_scanner->skip_line();
+        /*
+         * Skip to the next statement boundary. Consume tokens until we
+         * find EOL, EOF, semicolon, or see a right brace (which ends
+         * the current scope). Do not consume the right brace itself.
+         */
+        while (this->_scanner->has_next()) {
+                Token peek = this->_scanner->peek_token();
+                if (peek.classification() == Token::TOKEN_EOF ||
+                    peek.classification() == Token::TOKEN_EOL)
+                        break;
+                if (peek.classification() == Token::TOKEN_OPERATOR &&
+                    peek.op() == OPER_SEMICOLON)
+                        break;
+                if (EXPECT_RIGHT_BRACE(peek))
+                        break;
+                this->_scanner->next_token();
+        }
+        if (this->_scanner->has_next() && !EXPECT_RIGHT_BRACE(this->_scanner->peek_token()))
+                this->_scanner->next_token();
         return Statement::make_invalid(tk.location());
 }
 
@@ -290,41 +304,57 @@ Statement* Parser::parse_for_statement()
         Token lbrace = this->_scanner->peek_token();
         Statement* incdec_stmt = NULL;
         if (!EXPECT_LEFT_BRACE(lbrace) && lbrace.classification() == Token::TOKEN_IDENT) {
-                Token ident = this->_scanner->next_token();
-                Token oper = this->_scanner->next_token();
+                Token peek_op = this->_scanner->peek_nth_token(1);
 
-                if (ident.classification() != Token::TOKEN_IDENT ||
-                    oper.classification() != Token::TOKEN_OPERATOR) {
-                        rin_error_at(semicolon.location(),
-                                     "For-loop expected increment or decrement statement");
+                if (peek_op.classification() != Token::TOKEN_OPERATOR) {
+                        rin_error_at(peek_op.location(),
+                                     "For-loop expected increment, decrement, or assignment statement");
                         this->_scanner->skip_line();
                         delete ind_stmt;
                         delete cond_stmt;
-                        return Statement::make_invalid(ident.location());
+                        return Statement::make_invalid(peek_op.location());
                 }
 
-                if (oper.op() != OPER_INC && oper.op() != OPER_DEC) {
-                        rin_error_at(semicolon.location(),
-                                     "For-loop expected increment or decrement statement");
+                /*
+                 * If the operator after the identifier is an assignment or
+                 * compound assignment, parse a full assignment statement.
+                 */
+                if (peek_op.op() == OPER_ASSIGN ||
+                    peek_op.op() == OPER_ADD_ASSIGN ||
+                    peek_op.op() == OPER_SUB_ASSIGN ||
+                    peek_op.op() == OPER_MUL_ASSIGN ||
+                    peek_op.op() == OPER_QUO_ASSIGN) {
+                        incdec_stmt = this->parse_assignment_statement();
+                        if (incdec_stmt->is_invalid()) {
+                                delete ind_stmt;
+                                delete cond_stmt;
+                                return incdec_stmt;
+                        }
+                } else if (peek_op.op() == OPER_INC || peek_op.op() == OPER_DEC) {
+                        Token ident = this->_scanner->next_token();
+                        Token oper = this->_scanner->next_token();
+
+                        Named_object* obj = this->backend()->current_scope()->lookup(*ident.identifier());
+                        if (!obj) {
+                                rin_error_at(ident.location(), "'%s' is undefined", ident.str());
+                                delete ind_stmt;
+                                delete cond_stmt;
+                                return Statement::make_invalid(ident.location());
+                        }
+
+                        Expression* ref = Expression::make_var_reference(obj, ident.location());
+                        Expression* unary = Expression::make_unary(oper.op(), ref, oper.location());
+
+                        incdec_stmt = (oper.op() == OPER_INC) ? Statement::make_inc(unary) :
+                                Statement::make_dec(unary);
+                } else {
+                        rin_error_at(peek_op.location(),
+                                     "For-loop expected increment, decrement, or assignment statement");
                         this->_scanner->skip_line();
                         delete ind_stmt;
                         delete cond_stmt;
-                        return Statement::make_invalid(ident.location());
+                        return Statement::make_invalid(peek_op.location());
                 }
-
-                Named_object* obj = this->backend()->current_scope()->lookup(*ident.identifier());
-                if (!obj) {
-                        rin_error_at(ident.location(), "'%s' is undefined", ident.str());
-                        delete ind_stmt;
-                        delete cond_stmt;
-                        return Statement::make_invalid(ident.location());
-                }
-
-                Expression* ref = Expression::make_var_reference(obj, ident.location());
-                Expression* unary = Expression::make_unary(oper.op(), ref, oper.location());
-
-                incdec_stmt = (oper.op() == OPER_INC) ? Statement::make_inc(unary) :
-                        Statement::make_dec(unary);
         }
 
         // Skip EOL tokens before opening brace (allows brace on next line)
@@ -416,7 +446,7 @@ Statement* Parser::parse_var_dec_statement()
         Token ident = this->_scanner->peek_token();
         if (ident.classification() != Token::TOKEN_IDENT) {
                 rin_error_at(ident.location(),
-                        "Variable declaration expected identifier but received %s instead",
+                        "Variable declaration expected identifier but received %s instead. Expected a variable name",
                         ident.str());
                 this->_scanner->skip_line();
                 return Statement::make_invalid(ident.location());
@@ -476,14 +506,14 @@ Statement* Parser::parse_assignment_statement()
                 case OPER_ASSIGN:     break;
                 default:
                         rin_error_at(assign.location(),
-                                "Assignment statement expected '=' operator, but received %s instead",
+                                "Assignment statement expected '=' operator, but received %s instead. Did you mean '='?",
                                 assign.str());
                         this->_scanner->skip_line();
                         return Statement::make_invalid(assign.location());
                 }
         } else {
                 rin_error_at(assign.location(),
-                        "Assignment statement expected '=' operator, but received %s instead",
+                        "Assignment statement expected '=' operator, but received %s instead. Did you mean '='?",
                         assign.str());
                 this->_scanner->skip_line();
                 return Statement::make_invalid(assign.location());
@@ -494,6 +524,7 @@ Statement* Parser::parse_assignment_statement()
         if (!obj) {
                 rin_error_at(ident.location(), "'%s' is undeclared",
                         ident.str());
+                this->_scanner->skip_line();
                 return Statement::make_invalid(ident.location());
         }
 
@@ -529,6 +560,13 @@ Statement* Parser::parse_inc_dec_statement()
         // Create var reference
         Named_object* obj = this->backend()->current_scope()->
                 lookup(*ident.identifier());
+        if (!obj) {
+                rin_error_at(ident.location(), "'%s' is undefined",
+                        ident.str());
+                this->_scanner->skip_line();
+                return Statement::make_invalid(ident.location());
+        }
+
         Expression* var_reference = Expression::make_var_reference
                 (obj, ident.location());
 
@@ -805,8 +843,19 @@ public:
         }
 
         /*
-         * If the node falls out of scope then we don't want
-         * to delete the underlying expression.
+         * Expression_node does NOT own the underlying Expression*.
+         *
+         * Expressions are created during node construction (for VAR_NODE
+         * and FLOAT_NODE types) and later extracted by get_expression(),
+         * which incorporates them into the final AST tree. After
+         * get_expression() returns, the Expression* is owned by the
+         * caller (or by a parent Expression such as Binary_expression
+         * or Unary_expression).
+         *
+         * On error paths, expr_abort() is called to delete the
+         * Expression* before the node is destroyed. This two-phase
+         * cleanup avoids double-free: the destructor only deletes
+         * child nodes (left_child, right_child), never the Expression*.
          */
         ~Expression_node()
         {
@@ -815,8 +864,12 @@ public:
         }
 
         /*
-         * Abort is for when expression parsing fails and we
-         * can safely delete the underlying expression.
+         * Abort is for when expression parsing fails and we need to
+         * clean up the underlying Expression*. Only non-operator,
+         * non-invalid nodes hold an Expression* that must be freed.
+         * This must be called before deleting the node on error paths,
+         * since ~Expression_node() intentionally does NOT delete the
+         * expression (see ownership comment above).
          */
         void expr_abort()
         {
@@ -963,7 +1016,13 @@ Expression* Parser::parse_conditional_expression(RIN_OPERATOR terminal)
         return Expression::make_conditional(cond, cond->location());
 }
 
-// Abort expression parsing. Delete all dynamic expressions.
+/*
+ * Abort expression parsing. Cleans up all Expression_node objects in
+ * both the operator stack and output queue. For each node, expr_abort()
+ * is called first to delete any owned Expression* (non-operator,
+ * non-invalid nodes), then the node itself is deleted (which recursively
+ * deletes child nodes but NOT their expressions).
+ */
 void __abort_expr_parse
 (std::stack<Expression_node*>& op, std::deque<Expression_node*> out)
 {
@@ -1291,8 +1350,12 @@ exit_loop:
         Expression* binary = super_root->get_expression();
 
         /*
-         * Will recursively clear tree without affecting underlying
-         * expressions.
+         * Delete the Expression_node tree. This recursively deletes all
+         * child nodes via ~Expression_node(), but does NOT delete the
+         * Expression* values they held — those have been incorporated
+         * into the AST by get_expression() and are now owned by the
+         * returned Expression* (e.g., as children of Binary_expression
+         * or Unary_expression nodes).
          */
         delete super_root;
         return binary;
