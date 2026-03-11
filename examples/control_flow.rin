@@ -1,0 +1,22 @@
+// control_flow.rin - Demonstrates if, else, else-if, and loops
+
+float x = 10.0f
+
+if x > 5.0f {
+	float y = x * 2.0f
+} else if x == 5.0f {
+	float y = x
+} else {
+	float y = 0.0f
+}
+
+// For-loop with induction, condition, and increment
+for float i = 0.0f; i < 10.0f; i++ {
+	x += 1.0f
+}
+
+// While-loop
+float count = 0.0f
+while count < 5.0f {
+	count++
+}

@@ -4,6 +4,7 @@ build
 # Prerequisites
 *.d
 *.rin
+!examples/*.rin
 
 # Compiled Object files
 *.slo
@@ -37,3 +38,6 @@ build
 
 # Miscellaneous
 .DS_Store
+
+# Claude Code
+.claude
