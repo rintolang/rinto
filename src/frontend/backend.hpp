@@ -105,23 +105,18 @@ public:
         // Lookup a defined Named_object by its string. Returns NULL.
         Named_object* lookup(const std::string& ident)
         {
-                Named_object* x = this->ident_map[ident];
-                if (!x && this->parent())
+                auto itr = this->ident_map.find(ident);
+                if (itr != this->ident_map.end())
+                        return itr->second;
+                if (this->parent())
                         return this->parent()->lookup(ident);
-
-                return x;
+                return NULL;
         }
 
         // Test whether an identifier string has been defined.
         bool is_defined(const std::string& ident)
         {
-                if (this->lookup(ident))
-                        return true;
-
-                if (this->parent())
-                        return this->parent()->is_defined(ident);
-
-                return false;
+                return (this->lookup(ident) != NULL);
         }
 
         /*

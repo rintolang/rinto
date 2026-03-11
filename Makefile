@@ -18,5 +18,12 @@ debug-parser: build-dir
 	$(CPP) $(CPP-OPTS) -o $(BUILD-DIR)/debug-parser.out $(DEBUG-DIR)/parser.cc \
 	$(DEBUG-DIR)/debug-diagnostic.cc -I$(DEBUG-DIR) $(FRONTEND_SRC) $(DEPS)
 
+all: debug-scanner debug-parser
+
 build-dir:
 	@mkdir -p build
+
+clean:
+	rm -rf $(BUILD-DIR)
+
+.PHONY: all clean build-dir debug-scanner debug-parser

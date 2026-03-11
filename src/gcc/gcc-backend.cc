@@ -54,17 +54,19 @@ Gcc_backend::~Gcc_backend()
 
 Bvariable* Gcc_backend::variable(Named_object* obj)
 {
-        if (this->_var_map[obj])
-                return this->_var_map[obj];
+        auto itr = this->_var_map.find(obj);
+        if (itr != this->_var_map.end())
+                return itr->second;
 
         tree decl = build_decl(gcc_location(obj->location()),
                 VAR_DECL, get_identifier(obj->identifier().c_str()),
                 float_type_node);
 
         DECL_CONTEXT(decl) = this->_supercx_tree;
-        this->_var_map[obj] = new Bvariable(decl);
+        Bvariable* var = new Bvariable(decl);
+        this->_var_map[obj] = var;
 
-        return _var_map[obj];
+        return var;
 }
 
 Bexpression* Gcc_backend::unary_expression
@@ -89,8 +91,8 @@ Bexpression* Gcc_backend::unary_expression
         if (op == OPER_INC || op == OPER_DEC)
                 return expr;
 
-        // Bad operator.
-        if (op == OPER_NOT)
+        // Only NOT is a valid unary operator at this point.
+        if (op != OPER_NOT)
                 RIN_UNREACHABLE();
 
         tree ret = fold_build1_loc(gcc_location(loc),

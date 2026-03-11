@@ -28,7 +28,7 @@ Token::Token(const Token& tok)
 {
         if (tok._classification == TOKEN_INTEGER
             || tok._classification == TOKEN_FLOAT) {
-                mpfr_init_set_str(this->value.float_value, tok.token_string.c_str(), 10, MPFR_RNDN);
+                mpfr_init_set(this->value.float_value, tok.value.float_value, MPFR_RNDN);
         } else if (tok._classification == TOKEN_IDENT)
                 this->value.id_name = new std::string(*tok.value.id_name);
         else if (tok._classification == TOKEN_OPERATOR)
