@@ -22,3 +22,15 @@ jobs:
       run: make debug-scanner
     - name: Debug-Parser Module
       run: make debug-parser
+    - name: Run scanner on examples
+      run: |
+          for f in examples/*.rin; do
+            echo "--- Scanning $f ---"
+            ./build/debug-scanner.out "$f"
+          done
+    - name: Run parser on examples
+      run: |
+          for f in examples/*.rin; do
+            echo "--- Parsing $f ---"
+            ./build/debug-parser.out "$f"
+          done
