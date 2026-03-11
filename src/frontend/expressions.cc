@@ -32,13 +32,13 @@ Bexpression* Unary_expression::do_get_backend(Backend* backend)
         RIN_ASSERT(backend);
 
         RIN_ASSERT(this->op() == OPER_INC || this->op() == OPER_DEC
-                   || this->op() == OPER_NOT);
+                   || this->op() == OPER_NOT || this->op() == OPER_NEG);
 
         /*
          * Increment and decrement require an lvalue (variable reference).
-         * NOT can operate on any expression.
+         * NOT and NEG can operate on any expression.
          */
-        if (this->op() != OPER_NOT &&
+        if (this->op() != OPER_NOT && this->op() != OPER_NEG &&
             this->operand()->classification() != Expression::EXPRESSION_VAR_REFERENCE) {
                 rin_error_at(this->location(), "lvalue required as increment/decrement operand");
                 return backend->invalid_expression();

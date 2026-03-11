@@ -4,7 +4,6 @@
  * TODO: Parser currently requires if-stmt, for-loop left braces to be on same
  * line as condition. Perhaps this should be changed?
  *
- * TODO: minus (-) as a unary operator.
  * TODO: for-loop increment statement parses expressions.
  */
 
@@ -583,7 +582,7 @@ public:
                 if (this->_type != OPERATOR_NODE)
                         return false;
                 if (this->_value.oper == OPER_INC || this->_value.oper == OPER_DEC ||
-                    this->_value.oper == OPER_NOT)
+                    this->_value.oper == OPER_NOT || this->_value.oper == OPER_NEG)
                         return true;
                 return false;
         }
@@ -806,6 +805,27 @@ Expression* Parser::parse_expression(RIN_OPERATOR terminal)
                                 __abort_expr_parse(operators, output);
                                 return NULL;
                         }
+
+                        /*
+                         * Detect unary minus: '-' is unary when it appears at the
+                         * start of an expression or after another operator (except
+                         * close paren, INC, DEC which produce values).
+                         */
+                        if (token.op() == OPER_SUB && output.empty() && operators.empty()) {
+                                Token neg_tok = Token::make_operator_token(OPER_NEG, token.location());
+                                node = new Expression_node(neg_tok, this->backend());
+                                break;
+                        }
+                        if (token.op() == OPER_SUB &&
+                            prev_token.classification() == Token::TOKEN_OPERATOR &&
+                            prev_token.op() != OPER_RPAREN &&
+                            prev_token.op() != OPER_INC &&
+                            prev_token.op() != OPER_DEC) {
+                                Token neg_tok = Token::make_operator_token(OPER_NEG, token.location());
+                                node = new Expression_node(neg_tok, this->backend());
+                                break;
+                        }
+
                         // --- DOES NOT BREAK ---
 
                 case Token::TOKEN_FLOAT:
