@@ -11,7 +11,8 @@ enum RIN_OPERATOR {
         OPER_ASSIGN, OPER_NOT,    OPER_NEQ,    OPER_LEQ,
         OPER_GEQ,    OPER_LPAREN, OPER_LBRACK, OPER_LBRACE,
         OPER_RPAREN, OPER_RBRACK, OPER_RBRACE, OPER_SEMICOLON,
-        OPER_NEG // Internal: unary negation (not scanned, created during parsing)
+        OPER_NEG, // Internal: unary negation (not scanned, created during parsing)
+        OPER_ADD_ASSIGN, OPER_SUB_ASSIGN, OPER_MUL_ASSIGN, OPER_QUO_ASSIGN
 };
 
 /*

@@ -412,12 +412,27 @@ Statement* Parser::parse_assignment_statement()
         RIN_ASSERT(ident.classification() == Token::TOKEN_IDENT);
 
         /*
-         * Verify ASSIGN operator; don't use RIN_ASSERT because
-         * this might've been called by the var declaration
-         * parser, in which case we'd want to return an error.
+         * Verify ASSIGN or compound-assign operator; don't use RIN_ASSERT
+         * because this might've been called by the var declaration parser,
+         * in which case we'd want to return an error.
          */
         Token assign = this->_scanner->next_token();
-        if (assign.classification() != Token::TOKEN_OPERATOR || assign.op() != OPER_ASSIGN) {
+        RIN_OPERATOR compound_op = OPER_ILLEGAL;
+        if (assign.classification() == Token::TOKEN_OPERATOR) {
+                switch (assign.op()) {
+                case OPER_ADD_ASSIGN: compound_op = OPER_ADD; break;
+                case OPER_SUB_ASSIGN: compound_op = OPER_SUB; break;
+                case OPER_MUL_ASSIGN: compound_op = OPER_MUL; break;
+                case OPER_QUO_ASSIGN: compound_op = OPER_QUO; break;
+                case OPER_ASSIGN:     break;
+                default:
+                        rin_error_at(assign.location(),
+                                "Assignment statement expected '=' operator, but received %s instead",
+                                assign.str());
+                        this->_scanner->skip_line();
+                        return Statement::make_invalid(assign.location());
+                }
+        } else {
                 rin_error_at(assign.location(),
                         "Assignment statement expected '=' operator, but received %s instead",
                         assign.str());
@@ -435,12 +450,21 @@ Statement* Parser::parse_assignment_statement()
 
         Expression* lhs_ref = Expression::make_var_reference(obj, ident.location());
 
-        // Parse assignment to binary expression
+        // Parse right-hand side expression.
         Expression* binary = this->parse_binary_expression();
         if (!binary) {
                 this->_scanner->skip_line();
                 delete lhs_ref;
                 return Statement::make_invalid(assign.location());
+        }
+
+        /*
+         * For compound assignments (+=, -=, *=, /=), desugar into
+         * x = x op rhs. Create a second var reference for the RHS.
+         */
+        if (compound_op != OPER_ILLEGAL) {
+                Expression* rhs_ref = Expression::make_var_reference(obj, ident.location());
+                binary = Expression::make_binary(compound_op, rhs_ref, binary, assign.location());
         }
 
         EXPECT_SEMICOLON_ERR(this->_scanner->next_token());
