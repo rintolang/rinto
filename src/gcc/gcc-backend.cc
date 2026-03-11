@@ -185,6 +185,12 @@ Bexpression* Gcc_backend::var_reference(Bvariable* var, Location loc)
         return new Bexpression(ret);
 }
 
+/*
+ * TODO: String type support. When the parser supports string expressions,
+ * the string type would map to build_pointer_type(char_type_node) in GCC,
+ * i.e. a char* pointer type.
+ */
+
 Bexpression* Gcc_backend::float_expression(const mpfr_t* val, Location loc)
 {
         RIN_ASSERT(val);

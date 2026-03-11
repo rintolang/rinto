@@ -1,3 +1,4 @@
+// expressions.hpp - Expression AST node types for the Rinto frontend
 #ifndef RIN_EXPRESSIONS_HPP
 #define RIN_EXPRESSIONS_HPP
 

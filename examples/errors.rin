@@ -1,0 +1,5 @@
+// Error test cases - these should produce errors but not crash
+float
+x +
+{
+float x =

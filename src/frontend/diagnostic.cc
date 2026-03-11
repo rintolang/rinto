@@ -109,6 +109,9 @@ static std::string expand_message(const char* fmt, va_list ap)
 
 #pragma GCC diagnostic pop
 
+// Warning level: only warnings with opt <= rin_warning_level are emitted.
+int rin_warning_level = 0;
+
 static const char* cached_open_quote  = NULL;
 static const char* cached_close_quote = NULL;
 
@@ -137,6 +140,9 @@ void rin_error_at(const Location loc, const char* fmt, ...)
 
 void rin_warning_at(const Location loc, int opt, const char* fmt, ...)
 {
+        if (opt > rin_warning_level)
+                return;
+
         va_list ap;
 
         va_start(ap, fmt);

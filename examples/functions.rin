@@ -1,0 +1,10 @@
+// functions.rin - Demonstrates function declaration and calling syntax
+
+fn add(a, b) {
+	return a + b
+}
+
+fn main() {
+	float x = 3.0f
+	add(x, 2.0f)
+}

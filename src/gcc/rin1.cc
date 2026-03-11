@@ -205,9 +205,12 @@ static tree rin_langhook_type_for_mode(enum machine_mode mode, int unsignedp)
 }
 
 static tree rin_langhook_type_for_size
-(unsigned int bits ATTRIBUTE_UNUSED, int unsignedp ATTRIBUTE_UNUSED)
+(unsigned int bits, int unsignedp)
 {
-        gcc_unreachable();
+        if (bits <= 32)
+                return unsignedp ? unsigned_type_node : integer_type_node;
+        if (bits <= 64)
+                return unsignedp ? long_unsigned_type_node : long_integer_type_node;
         return NULL;
 }
 
@@ -217,12 +220,11 @@ static tree rin_langhook_builtin_function(tree decl)
 
 static bool rin_langhook_global_bindings_p(void)
 {
-        gcc_unreachable();
-        return true;
+        return false;
 }
 
-static tree rin_langhook_pushdecl (tree decl ATTRIBUTE_UNUSED)
-{ gcc_unreachable (); }
+static tree rin_langhook_pushdecl (tree decl)
+{ return decl; }
 
 static tree rin_langhook_getdecls (void)
 { return NULL; }

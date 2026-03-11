@@ -1,3 +1,4 @@
+// parser.hpp - Syntactic analyzer for the Rinto programming language
 #ifndef RIN_PARSER_HPP
 #define RIN_PARSER_HPP
 

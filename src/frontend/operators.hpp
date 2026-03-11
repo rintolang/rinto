@@ -1,3 +1,4 @@
+// operators.hpp - Operator enumeration, precedence, and utility functions
 #ifndef RIN_OPERATORS_HPP
 #define RIN_OPERATORS_HPP
 

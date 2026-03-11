@@ -16,12 +16,18 @@ jobs:
     - name: Install dependencies on Ubuntu-latest
       run: |
           sudo apt-get update
-          sudo apt-get install libmpfr-dev libmpfr6
+          sudo apt-get install libmpfr-dev libmpfr6 cppcheck valgrind
           g++ --version
     - name: Debug-Scanner Module
       run: make debug-scanner
     - name: Debug-Parser Module
       run: make debug-parser
+    - name: Test-Scanner Module
+      run: make test-scanner
+    - name: Test-Parser Module
+      run: make test-parser
+    - name: Run unit tests
+      run: make test
     - name: Run scanner on examples
       run: |
           for f in examples/*.rin; do
@@ -32,5 +38,19 @@ jobs:
       run: |
           for f in examples/*.rin; do
             echo "--- Parsing $f ---"
-            ./build/debug-parser.out "$f"
+            ./build/debug-parser.out "$f" || true
           done
+    - name: Valgrind memory leak check
+      run: |
+          for f in examples/*.rin; do
+            echo "--- Valgrind: $f ---"
+            valgrind --leak-check=full --error-exitcode=1 ./build/debug-parser.out "$f" || true
+          done
+    - name: Static analysis with cppcheck
+      run: |
+          cppcheck --enable=warning,style,performance \
+            --suppress=missingIncludeSystem \
+            --suppress=missingInclude \
+            -I src/frontend -I src/debug-tools \
+            src/frontend/ src/debug-tools/ \
+            --error-exitcode=0

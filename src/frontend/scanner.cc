@@ -1,3 +1,4 @@
+// scanner.cc - Token scanning and lexical analysis implementation
 #include "scanner.hpp"
 
 const std::string __eof_string__ = "EOF";
@@ -95,7 +96,7 @@ Token Token::make_float_token(const std::string& str, Location loc)
 Token Token::make_integer_token(const std::string& str, Location loc)
 {
         Token tok(TOKEN_INTEGER, str, loc);
-        mpfr_init_set_str(tok.value.float_value, str.c_str(), 10, MPFR_RNDN);
+        mpfr_init_set_str(tok.value.float_value, str.c_str(), 0, MPFR_RNDN);
         return tok;
 }
 
@@ -356,6 +357,12 @@ Token Scanner::scan_token()
                                 break;
                         literal[0] = src->peek();
                 }
+        }
+
+        // Hex literal: starts with 0x or 0X
+        if (is_hex_literal(tokenStr)) {
+                Token tok = Token::make_integer_token(tokenStr, Scanner::location());
+                return tok;
         }
 
         // Integer literal: digits only, next char is not '.' or 'f'

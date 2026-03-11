@@ -1,3 +1,4 @@
+// statements.hpp - Statement AST node types for the Rinto frontend
 #ifndef RIN_STATEMENTS_HPP
 #define RIN_STATEMENTS_HPP
 
@@ -232,6 +233,7 @@ protected:
         Bstatement* do_get_backend(Backend* backend);
 
 private:
+        // Not owned: Named_object is owned by the Scope's ident_map.
         Named_object* _var;
 };
 
@@ -262,9 +264,9 @@ protected:
         Bstatement* do_get_backend(Backend* backend);
 
 private:
-        Expression* _cond;
-        Scope*      _then_block;
-        Scope*      _else_block = NULL;
+        Expression* _cond;         // Owned: condition expression
+        Scope*      _then_block;   // Not owned: managed by Backend scope stack
+        Scope*      _else_block = NULL;  // Owned if set: deleted in destructor
 };
 
 // For-loop statement
@@ -301,12 +303,12 @@ protected:
         Bstatement* do_get_backend(Backend* backend);
 
 private:
-        // Induction, condition, increment statements.
+        // Owned: induction, condition, increment statements (may be NULL).
         Statement* _ind;
         Statement* _cond;
         Statement* _inc;
 
-        // The statements to execute
+        // Owned: the loop body scope, set via add_statements() (may be NULL).
         Scope* _statements = NULL;
 };
 
@@ -455,7 +457,7 @@ protected:
 private:
         std::string _name;
         std::vector<std::string> _params;
-        Scope* _body;
+        Scope* _body;  // Owned: function body scope, deleted in destructor
 };
 
 // A break statement exits the innermost loop
