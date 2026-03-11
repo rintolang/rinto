@@ -190,6 +190,22 @@ make debug-parser     # Builds build/debug-parser.out
 10. **GCC backend variable caching**: `Gcc_backend` maintains `_var_map` mapping `Named_object*`
     to `Bvariable*` so the same variable isn't recreated.
 
+11. **Else/else-if syntax**: `if cond { } else { }` and `if cond { } else if cond2 { } else { }`.
+    The else keyword is parsed immediately after the closing `}` of the if block.
+
+12. **While-loop** reuses `For_statement` with NULL induction and NULL increment. No new AST or
+    backend node types are needed.
+
+13. **Unary negation** uses internal `OPER_NEG` operator (not scanned) to distinguish from binary
+    `OPER_SUB`. Detection happens in the Shunting Yard algorithm when `-` appears at expression
+    start or after another operator.
+
+14. **Compound assignments** (`+=`, `-=`, `*=`, `/=`) are desugared in the parser to
+    `x = x op rhs`, requiring no backend changes.
+
+15. **Windows line endings**: The repository uses CRLF. Git's `autocrlf` handles conversion, but
+    tools like `sed` may produce LF-only files. Git warnings about CRLF replacement are expected.
+
 ---
 
 ## Mixture-of-Experts Code Review Panel
