@@ -6,7 +6,7 @@
 #include "file.hpp"
 
 // Reserved identifiers
-enum RID { RID_INVALID, RID_FLOAT, RID_FOR, RID_IF, RID_ELSE };
+enum RID { RID_INVALID, RID_FLOAT, RID_FOR, RID_IF, RID_ELSE, RID_WHILE };
 
 // Lookup an RID by string name
 RID rid_lookup(const std::string& val);

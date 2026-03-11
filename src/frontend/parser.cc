@@ -82,6 +82,10 @@ Statement* Parser::parse_next()
                 if (tk.rid() == RID_FOR)
                         return this->parse_for_statement();
 
+                // Parse while statement
+                if (tk.rid() == RID_WHILE)
+                        return this->parse_while_statement();
+
                 // Parse variable declaration
                 if (tk.rid() == RID_FLOAT)
                         return this->parse_var_dec_statement();
@@ -305,6 +309,51 @@ Statement* Parser::parse_for_statement()
         // Create for-loop statement
         For_statement* loop_stmt = new For_statement(ind_stmt, cond_stmt,
                 incdec_stmt, for_rid.location());
+        loop_stmt->add_statements(loop_scope);
+
+        return loop_stmt;
+}
+
+Statement* Parser::parse_while_statement()
+{
+        // Verify WHILE token.
+        Token while_rid = this->_scanner->next_token();
+        RIN_ASSERT(while_rid.classification() == Token::TOKEN_RID);
+        RIN_ASSERT(while_rid.rid() == RID_WHILE);
+
+        this->backend()->enter_scope();
+
+        // Condition.
+        Expression* cond = this->parse_conditional_expression();
+        Statement* cond_stmt = NULL;
+        if (cond) {
+                cond_stmt = Statement::make_expression(cond, cond->location());
+        } else {
+                this->_scanner->skip_line();
+                this->backend()->leave_scope();
+                return Statement::make_invalid(while_rid.location());
+        }
+
+        // Opening brace
+        Token lbrace = this->_scanner->next_token();
+        if (!EXPECT_LEFT_BRACE(lbrace)) {
+                rin_error_at(lbrace.location(),
+                             "While-loop expected left-brace '{' but received %s instead",
+                             lbrace.str());
+                this->_scanner->skip_line();
+                delete cond_stmt;
+                this->backend()->leave_scope();
+                return Statement::make_invalid(lbrace.location());
+        }
+
+        // Parse statements in while-loop scope.
+        Scope* loop_scope = this->_backend->enter_scope();
+        this->parse(false);
+        this->_backend->leave_scope();
+
+        // Reuse for-loop with NULL induction and NULL increment.
+        For_statement* loop_stmt = new For_statement(NULL, cond_stmt,
+                NULL, while_rid.location());
         loop_stmt->add_statements(loop_scope);
 
         return loop_stmt;
