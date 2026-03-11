@@ -88,7 +88,10 @@ Bstatement* Variable_declaration_statement::do_get_backend(Backend* backend)
 // If_statement implementation
 
 If_statement::~If_statement()
-{ delete this->_cond; }
+{
+        delete this->_cond;
+        delete this->_else_block;
+}
 
 Bstatement* If_statement::do_get_backend(Backend* backend)
 {
@@ -106,7 +109,7 @@ Bstatement* If_statement::do_get_backend(Backend* backend)
 
         // Build backend if-statement.
         return backend->if_statement(cond, this->then_block(),
-                this->location());
+                this->else_block(), this->location());
 }
 
 // For_statement implementation

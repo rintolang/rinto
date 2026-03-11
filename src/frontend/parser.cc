@@ -150,7 +150,42 @@ Statement* Parser::parse_if_statement()
         Scope* if_stmt_scope = this->_backend->enter_scope();
         this->parse(false);
 
-        return Statement::make_if(condition, if_stmt_scope, if_rid.location());
+        If_statement* if_stmt = new If_statement(condition, if_stmt_scope,
+                if_rid.location());
+
+        // Check for else / else-if
+        Token peek = this->_scanner->peek_token();
+        if (peek.classification() == Token::TOKEN_RID && peek.rid() == RID_ELSE) {
+                this->_scanner->next_token();
+
+                Token next = this->_scanner->peek_token();
+
+                // else if { ... }
+                if (next.classification() == Token::TOKEN_RID && next.rid() == RID_IF) {
+                        Scope* else_scope = this->_backend->enter_scope();
+                        Statement* else_if = this->parse_if_statement();
+                        if (!else_if->is_invalid())
+                                this->_backend->push_statement(
+                                        else_if->get_backend(this->_backend));
+                        delete else_if;
+                        this->_backend->leave_scope();
+                        if_stmt->set_else_block(else_scope);
+                }
+                // else { ... }
+                else if (EXPECT_LEFT_BRACE(next)) {
+                        this->_scanner->next_token();
+                        Scope* else_scope = this->_backend->enter_scope();
+                        this->parse(false);
+                        if_stmt->set_else_block(else_scope);
+                }
+                else {
+                        rin_error_at(next.location(),
+                                "Expected '{' or 'if' after 'else', but received %s instead",
+                                next.str());
+                }
+        }
+
+        return if_stmt;
 }
 
 Statement* Parser::parse_for_statement()

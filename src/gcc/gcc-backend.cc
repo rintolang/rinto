@@ -257,7 +257,8 @@ Bstatement* Gcc_backend::dec_statement(Bexpression* unary, Location loc)
         return new Bstatement(t);
 }
 
-Bstatement* Gcc_backend::if_statement(Bexpression* cond, Scope* then, Location loc)
+Bstatement* Gcc_backend::if_statement
+(Bexpression* cond, Scope* then, Scope* else_block, Location loc)
 {
         RIN_ASSERT(cond);
         RIN_ASSERT(then);
@@ -268,14 +269,18 @@ Bstatement* Gcc_backend::if_statement(Bexpression* cond, Scope* then, Location l
             then_tree == error_mark_node) {
                 delete cond;
                 delete then;
+                delete else_block;
                 return this->invalid_statement();
         }
 
+        tree else_tree = (else_block) ? unfold_scope(else_block) : NULL_TREE;
+
         tree ret = build3_loc(gcc_location(loc), COND_EXPR,
-                void_type_node, cond_tree, then_tree, NULL_TREE);
+                void_type_node, cond_tree, then_tree, else_tree);
 
         delete cond;
         delete then;
+        delete else_block;
         return new Bstatement(ret);
 }
 
