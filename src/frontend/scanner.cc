@@ -126,6 +126,8 @@ std::string rid_as_string(RID rid)
                 return "if keyword";
         case RID_FOR:
                 return "for keyword";
+        case RID_ELSE:
+                return "else keyword";
         default:
                 return "unknown keyword";
         }
@@ -503,6 +505,8 @@ RID rid_lookup(const std::string& val)
                 return RID_IF;
         if (val == "for")
                 return RID_FOR;
+        if (val == "else")
+                return RID_ELSE;
 
         return RID_INVALID;
 }

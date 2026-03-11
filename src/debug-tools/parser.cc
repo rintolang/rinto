@@ -181,11 +181,16 @@ public:
                 return new Bstatement;
         }
 
-        Bstatement* if_statement(Bexpression* expr, Scope* scope, Location loc)
+        Bstatement* if_statement
+        (Bexpression* expr, Scope* scope, Scope* else_block, Location loc)
         {
-                rin_inform(loc, "CREATED IF STATEMENT\n");
+                if (else_block)
+                        rin_inform(loc, "CREATED IF-ELSE STATEMENT\n");
+                else
+                        rin_inform(loc, "CREATED IF STATEMENT\n");
                 delete expr;
                 delete scope;
+                delete else_block;
 
                 return new Bstatement;
         }

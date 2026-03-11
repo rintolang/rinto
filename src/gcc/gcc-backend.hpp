@@ -163,8 +163,9 @@ public:
         Bstatement* inc_statement(Bexpression* unary, Location loc);
         Bstatement* dec_statement(Bexpression* unary, Location loc);
 
-        // Create an if statement tree.
-        Bstatement* if_statement(Bexpression* cond, Scope* then, Location loc);
+        // Create an if statement tree with optional else block.
+        Bstatement* if_statement
+        (Bexpression* cond, Scope* then, Scope* else_block, Location loc);
 
         // Create a for statement tree.
         Bstatement* for_statement

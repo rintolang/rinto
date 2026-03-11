@@ -203,7 +203,7 @@ private:
         Named_object* _var;
 };
 
-// If statement
+// If statement with optional else block
 class If_statement : public Statement
 {
 public:
@@ -220,12 +220,19 @@ public:
         Scope* then_block() const
         { return this->_then_block; }
 
+        Scope* else_block() const
+        { return this->_else_block; }
+
+        void set_else_block(Scope* else_block)
+        { this->_else_block = else_block; }
+
 protected:
         Bstatement* do_get_backend(Backend* backend);
 
 private:
         Expression* _cond;
         Scope*      _then_block;
+        Scope*      _else_block = NULL;
 };
 
 // For-loop statement

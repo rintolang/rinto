@@ -301,9 +301,10 @@ public:
         /*
          * Returns an if-statement. The expression should be a conditional
          * expression, and the scope must be used to parse through the
-         * if-statement's constituent statements.
+         * if-statement's constituent statements. The else_block may be NULL.
          */
-        virtual Bstatement* if_statement(Bexpression*, Scope*, Location) = 0;
+        virtual Bstatement* if_statement
+        (Bexpression*, Scope*, Scope* else_block, Location) = 0;
 
         /*
          * Returns a for-loop statement. Cond must be a conditional statement,
