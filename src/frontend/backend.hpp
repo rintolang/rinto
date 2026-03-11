@@ -49,10 +49,10 @@ public:
                 : _identifier(ident), _location(loc)
         {}
 
-        const std::string identifier()
+        const std::string& identifier() const
         { return this->_identifier; }
 
-        Location location()
+        Location location() const
         { return this->_location; }
 
 private:

@@ -70,7 +70,7 @@ Bstatement* Assignment_statement::do_get_backend(Backend* backend)
 
 // Variable_declaration_statement implementation
 
-const std::string Variable_declaration_statement::identifier()
+const std::string& Variable_declaration_statement::identifier() const
 {
         RIN_ASSERT(this->_var);
         return this->_var->identifier();

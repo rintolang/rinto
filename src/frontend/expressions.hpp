@@ -41,7 +41,7 @@ public:
         void set_is_invalid()
         { this->_classification = EXPRESSION_INVALID; }
 
-        Location location()
+        Location location() const
         { return this->_location; }
 
         // Make an invalid expression
