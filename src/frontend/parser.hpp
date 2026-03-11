@@ -82,6 +82,9 @@ private:
         // Parses a for statement
         Statement* parse_for_statement();
 
+        // Parses a while statement
+        Statement* parse_while_statement();
+
         // Parses a variable declaration
         Statement* parse_var_dec_statement();
 
