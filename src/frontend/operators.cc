@@ -9,7 +9,8 @@
 int OPERATOR_PRECEDENCE[] =
 {
         -2, 4, 4, 5, 5,  5,  1,  0,  6,  6,  2,  3, 3,
-        -2, 6, 2, 3, 3, -1, -2, -2, -1, -2, -2, -2
+        -2, 6, 2, 3, 3, -1, -2, -2, -1, -2, -2, -2,
+         6 // OPER_NEG
 };
 
 /*
@@ -142,6 +143,7 @@ std::string operator_name(RIN_OPERATOR op)
         case OPER_RBRACK:    return "']' operator";
         case OPER_RBRACE:    return "'}' operator";
         case OPER_SEMICOLON: return "';' operator";
+        case OPER_NEG:       return "unary '-' operator";
         default:             return "illegal operator";
         }
 }

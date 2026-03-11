@@ -82,7 +82,6 @@ Bexpression* Gcc_backend::unary_expression
         }
 
         tree type_tree = TREE_TYPE(expr_tree);
-        enum tree_code code = TRUTH_NOT_EXPR;
 
         /*
          * Although ++, -- are unary operators, they are
@@ -91,8 +90,12 @@ Bexpression* Gcc_backend::unary_expression
         if (op == OPER_INC || op == OPER_DEC)
                 return expr;
 
-        // Only NOT is a valid unary operator at this point.
-        if (op != OPER_NOT)
+        enum tree_code code;
+        if (op == OPER_NOT)
+                code = TRUTH_NOT_EXPR;
+        else if (op == OPER_NEG)
+                code = NEGATE_EXPR;
+        else
                 RIN_UNREACHABLE();
 
         tree ret = fold_build1_loc(gcc_location(loc),
