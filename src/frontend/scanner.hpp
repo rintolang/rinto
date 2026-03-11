@@ -45,9 +45,6 @@ public:
         std::string string()
         { return this->token_string; }
 
-        std::string test()
-        { return this->token_string; }
-
         // Custom Token Type constructors
         static Token make_invalid_token
         (const std::string& str, Location loc);

@@ -97,13 +97,17 @@ bool is_rin_operator(char c)
 bool is_rin_operator(const std::string& str)
 {
         __init_op_map__();
-        return __operator_map__[str];
+        auto itr = __operator_map__.find(str);
+        return (itr != __operator_map__.end() && itr->second != OPER_ILLEGAL);
 }
 
 RIN_OPERATOR op_lookup(const std::string& str)
 {
         __init_op_map__();
-        return __operator_map__[str];
+        auto itr = __operator_map__.find(str);
+        if (itr != __operator_map__.end())
+                return itr->second;
+        return OPER_ILLEGAL;
 }
 
 std::string operator_name(RIN_OPERATOR op)
