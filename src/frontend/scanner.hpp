@@ -6,7 +6,14 @@
 #include "file.hpp"
 
 // Reserved identifiers
-enum RID { RID_INVALID, RID_FLOAT, RID_FOR, RID_IF, RID_ELSE, RID_WHILE };
+enum RID {
+	RID_INVALID, RID_FLOAT, RID_INT, RID_BOOL, RID_STRING, RID_VAR,
+	RID_FOR, RID_IF, RID_ELSE, RID_WHILE,
+	RID_TRUE, RID_FALSE,
+	RID_FN, RID_RETURN,
+	RID_BREAK, RID_CONTINUE,
+	RID_SWITCH
+};
 
 // Lookup an RID by string name
 RID rid_lookup(const std::string& val);
@@ -54,6 +61,7 @@ public:
         static Token make_rid_token(RID rid, Location loc);
         static Token make_operator_token(RIN_OPERATOR op, Location loc);
         static Token make_float_token(const std::string& str, Location loc);
+        static Token make_integer_token(const std::string& str, Location loc);
 
         // Make an identifier token
         static Token make_ident_token(std::string name, Location loc);
@@ -69,6 +77,7 @@ public:
         const std::string* identifier() const;
         RIN_OPERATOR op() const;
         const mpfr_t* float_value() const;
+        const mpfr_t* int_value() const;
 
 private:
         // Private constructor: called by make_x_token functions

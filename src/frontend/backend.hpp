@@ -273,6 +273,9 @@ public:
          */
         virtual Bexpression* float_expression(const mpfr_t* val, Location) = 0;
 
+        // Return an expression which is a reference to an integer.
+        virtual Bexpression* integer_expression(const mpfr_t* val, Location) = 0;
+
         // Return a reference to a conditional expression
         virtual Bexpression* conditional_expression(Bexpression* cond, Location) = 0;
 
@@ -327,6 +330,28 @@ public:
          */
         virtual Bstatement* compound_statement
         (Bstatement* first, Bstatement* second, Location loc) = 0;
+
+        // Returns a return statement. Expression may be NULL for void return.
+        virtual Bstatement* return_statement(Bexpression* expr, Location) = 0;
+
+        /*
+         * Returns a function declaration statement. Params are parameter
+         * names, body is the function body scope.
+         */
+        virtual Bstatement* function_statement
+        (const std::string& name, const std::vector<std::string>& params,
+         Scope* body, Location) = 0;
+
+        // Returns a function call expression.
+        virtual Bexpression* call_expression
+        (const std::string& name, const std::vector<Bexpression*>& args,
+         Location) = 0;
+
+        // Returns a break statement to exit the innermost loop.
+        virtual Bstatement* break_statement(Location) = 0;
+
+        // Returns a continue statement to skip to the next loop iteration.
+        virtual Bstatement* continue_statement(Location) = 0;
 
 private:
         Scope* _supercontext;

@@ -12,6 +12,10 @@ class For_statement;
 class Inc_dec_statement;
 class Expression_statement;
 class Compound_statement;
+class Return_statement;
+class Function_declaration_statement;
+class Break_statement;
+class Continue_statement;
 
 // A statement is the highest programming abstraction in rinto.
 class Statement
@@ -22,7 +26,9 @@ public:
                 STATEMENT_INVALID,    STATEMENT_VARIABLE_DECLARATION,
                 STATEMENT_ASSIGNMENT, STATEMENT_INCDEC,
                 STATEMENT_IF,         STATEMENT_FOR,
-                STATEMENT_EXPRESSION, STATEMENT_COMPOUND
+                STATEMENT_EXPRESSION, STATEMENT_COMPOUND,
+                STATEMENT_RETURN,     STATEMENT_FUNCTION,
+                STATEMENT_BREAK,      STATEMENT_CONTINUE
         };
 
         Statement(Statement_classification cl, Location loc)
@@ -79,6 +85,20 @@ public:
         static Statement* make_compound
         (Statement* first, Statement* second, Location loc);
 
+        // Make a return statement (expr may be NULL for void return)
+        static Statement* make_return(Expression* expr, Location loc);
+
+        // Make a function declaration statement
+        static Statement* make_function
+        (const std::string& name, const std::vector<std::string>& params,
+         Scope* body, Location loc);
+
+        // Make a break statement
+        static Statement* make_break(Location loc);
+
+        // Make a continue statement
+        static Statement* make_continue(Location loc);
+
         // Cast statements to their higher-order types
         Invalid_statement* invalid_statement()
         { return this->convert<Invalid_statement, STATEMENT_INVALID>(); }
@@ -107,6 +127,18 @@ public:
 
         Compound_statement* compound_statement()
         { return this->convert<Compound_statement, STATEMENT_COMPOUND>(); }
+
+        Return_statement* return_statement()
+        { return this->convert<Return_statement, STATEMENT_RETURN>(); }
+
+        Function_declaration_statement* function_declaration_statement()
+        { return this->convert<Function_declaration_statement, STATEMENT_FUNCTION>(); }
+
+        Break_statement* break_statement()
+        { return this->convert<Break_statement, STATEMENT_BREAK>(); }
+
+        Continue_statement* continue_statement()
+        { return this->convert<Continue_statement, STATEMENT_CONTINUE>(); }
 
         // Return the backend representation of the statement
         Bstatement* get_backend(Backend* backend)
@@ -366,6 +398,88 @@ protected:
 private:
         Statement* _first;
         Statement* _second;
+};
+
+// A return statement optionally returns an expression value
+class Return_statement : public Statement
+{
+public:
+        Return_statement(Expression* expr, Location loc)
+                : Statement(STATEMENT_RETURN, loc),
+                  _expr(expr)
+        {}
+
+        ~Return_statement()
+        { delete this->_expr; }
+
+        // Return the expression (may be NULL for void return)
+        Expression* expr() const
+        { return this->_expr; }
+
+protected:
+        Bstatement* do_get_backend(Backend* backend);
+
+private:
+        Expression* _expr;
+};
+
+// A function declaration statement
+class Function_declaration_statement : public Statement
+{
+public:
+        Function_declaration_statement
+        (const std::string& name, const std::vector<std::string>& params,
+         Scope* body, Location loc)
+                : Statement(STATEMENT_FUNCTION, loc),
+                  _name(name), _params(params), _body(body)
+        {}
+
+        ~Function_declaration_statement()
+        { delete this->_body; }
+
+        // Return the function name
+        const std::string& name() const
+        { return this->_name; }
+
+        // Return the parameter names
+        const std::vector<std::string>& params() const
+        { return this->_params; }
+
+        // Return the function body scope
+        Scope* body() const
+        { return this->_body; }
+
+protected:
+        Bstatement* do_get_backend(Backend* backend);
+
+private:
+        std::string _name;
+        std::vector<std::string> _params;
+        Scope* _body;
+};
+
+// A break statement exits the innermost loop
+class Break_statement : public Statement
+{
+public:
+        Break_statement(Location loc)
+                : Statement(STATEMENT_BREAK, loc)
+        {}
+
+protected:
+        Bstatement* do_get_backend(Backend* backend);
+};
+
+// A continue statement skips to the next iteration of the innermost loop
+class Continue_statement : public Statement
+{
+public:
+        Continue_statement(Location loc)
+                : Statement(STATEMENT_CONTINUE, loc)
+        {}
+
+protected:
+        Bstatement* do_get_backend(Backend* backend);
 };
 
 #endif // RIN_STATEMENTS_HPP

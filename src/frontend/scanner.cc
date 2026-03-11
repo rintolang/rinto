@@ -20,7 +20,8 @@ bool Token::is_semicolon()
 
 void Token::clear()
 {
-        if (this->_classification == TOKEN_FLOAT)
+        if (this->_classification == TOKEN_FLOAT
+            || this->_classification == TOKEN_INTEGER)
                 mpfr_clear(this->value.float_value);
 }
 
@@ -91,6 +92,13 @@ Token Token::make_float_token(const std::string& str, Location loc)
         return tok;
 }
 
+Token Token::make_integer_token(const std::string& str, Location loc)
+{
+        Token tok(TOKEN_INTEGER, str, loc);
+        mpfr_init_set_str(tok.value.float_value, str.c_str(), 10, MPFR_RNDN);
+        return tok;
+}
+
 RID Token::rid() const
 {
         RIN_ASSERT(this->_classification == TOKEN_RID);
@@ -115,6 +123,12 @@ const mpfr_t* Token::float_value() const
         return &this->value.float_value;
 }
 
+const mpfr_t* Token::int_value() const
+{
+        RIN_ASSERT(this->_classification == TOKEN_INTEGER);
+        return &this->value.float_value;
+}
+
 std::string rid_as_string(RID rid)
 {
         switch (rid) {
@@ -130,6 +144,28 @@ std::string rid_as_string(RID rid)
                 return "else keyword";
         case RID_WHILE:
                 return "while keyword";
+        case RID_FN:
+                return "fn keyword";
+        case RID_RETURN:
+                return "return keyword";
+        case RID_BREAK:
+                return "break keyword";
+        case RID_CONTINUE:
+                return "continue keyword";
+        case RID_SWITCH:
+                return "switch keyword";
+        case RID_INT:
+                return "int keyword";
+        case RID_BOOL:
+                return "bool keyword";
+        case RID_STRING:
+                return "string keyword";
+        case RID_VAR:
+                return "var keyword";
+        case RID_TRUE:
+                return "true keyword";
+        case RID_FALSE:
+                return "false keyword";
         default:
                 return "unknown keyword";
         }
@@ -284,11 +320,7 @@ Token Scanner::scan_token()
         // At this point, we have non-whitespace char
         std::string tokenStr(1, ch);
 
-        /*
-         * Gather multi-char operator
-         * TODO: No need to check for is_operator of next token when &, | binary
-         * operators are implemented
-         */
+        /* Gather multi-char operator */
         while (is_operator(tokenStr) || is_operator(tokenStr + (char)src->peek())) {
                 if (is_operator(tokenStr + (char)src->peek())) {
                         int ch = src->get_char();
@@ -326,7 +358,12 @@ Token Scanner::scan_token()
                 }
         }
 
-        // Will fire for floats as well as integers (integers currently treated as floats)
+        // Integer literal: digits only, next char is not '.' or 'f'
+        if (is_int_literal(tokenStr) && src->peek() != '.' && src->peek() != 'f') {
+                Token tok = Token::make_integer_token(tokenStr, Scanner::location());
+                return tok;
+        }
+
         if (is_float_literal(tokenStr)) {
                 Token tok = Token::make_float_token(tokenStr, Scanner::location());
                 return tok;
@@ -511,6 +548,28 @@ RID rid_lookup(const std::string& val)
                 return RID_ELSE;
         if (val == "while")
                 return RID_WHILE;
+        if (val == "fn")
+                return RID_FN;
+        if (val == "return")
+                return RID_RETURN;
+        if (val == "break")
+                return RID_BREAK;
+        if (val == "continue")
+                return RID_CONTINUE;
+        if (val == "switch")
+                return RID_SWITCH;
+        if (val == "int")
+                return RID_INT;
+        if (val == "bool")
+                return RID_BOOL;
+        if (val == "true")
+                return RID_TRUE;
+        if (val == "false")
+                return RID_FALSE;
+        if (val == "string")
+                return RID_STRING;
+        if (val == "var")
+                return RID_VAR;
 
         return RID_INVALID;
 }

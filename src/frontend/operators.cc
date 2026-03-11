@@ -11,7 +11,9 @@ int OPERATOR_PRECEDENCE[] =
         -2, 4, 4, 5, 5,  5,  1,  0,  6,  6,  2,  3, 3,
         -2, 6, 2, 3, 3, -1, -2, -2, -1, -2, -2, -2,
          6, // OPER_NEG
-        -2, -2, -2, -2 // compound assignments (not used in expressions)
+        -2, -2, -2, -2, // compound assignments (not used in expressions)
+         2,  0,  1,  6,  3,  3, // BAND, BOR, BXOR, BNOT(unary), LSHIFT, RSHIFT
+        -2, -2 // OPER_TERNARY, OPER_COLON (not used in standard expression parsing)
 };
 
 /*
@@ -66,6 +68,18 @@ void __init_op_map__()
         __operator_map__.insert(op_pair("-=", OPER_SUB_ASSIGN));
         __operator_map__.insert(op_pair("*=", OPER_MUL_ASSIGN));
         __operator_map__.insert(op_pair("/=", OPER_QUO_ASSIGN));
+
+        // Bitwise operators
+        __operator_map__.insert(op_pair("&", OPER_BAND));
+        __operator_map__.insert(op_pair("|", OPER_BOR));
+        __operator_map__.insert(op_pair("^", OPER_BXOR));
+        __operator_map__.insert(op_pair("~", OPER_BNOT));
+        __operator_map__.insert(op_pair("<<", OPER_LSHIFT));
+        __operator_map__.insert(op_pair(">>", OPER_RSHIFT));
+
+        // Ternary operators
+        __operator_map__.insert(op_pair("?", OPER_TERNARY));
+        __operator_map__.insert(op_pair(":", OPER_COLON));
 
         __operator_map_is_inited__ = true;
 }
@@ -155,6 +169,14 @@ std::string operator_name(RIN_OPERATOR op)
         case OPER_SUB_ASSIGN: return "'-=' operator";
         case OPER_MUL_ASSIGN: return "'*=' operator";
         case OPER_QUO_ASSIGN: return "'/=' operator";
+        case OPER_BAND:       return "'&' operator";
+        case OPER_BOR:        return "'|' operator";
+        case OPER_BXOR:       return "'^' operator";
+        case OPER_BNOT:       return "'~' operator";
+        case OPER_LSHIFT:     return "'<<' operator";
+        case OPER_RSHIFT:     return "'>>' operator";
+        case OPER_TERNARY:    return "'?' operator";
+        case OPER_COLON:      return "':' operator";
         default:              return "illegal operator";
         }
 }

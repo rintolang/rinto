@@ -31,6 +31,20 @@ Statement* Statement::make_compound
 (Statement* first, Statement* second, Location loc)
 { return new Compound_statement(first, second, loc); }
 
+Statement* Statement::make_return(Expression* expr, Location loc)
+{ return new Return_statement(expr, loc); }
+
+Statement* Statement::make_break(Location loc)
+{ return new Break_statement(loc); }
+
+Statement* Statement::make_continue(Location loc)
+{ return new Continue_statement(loc); }
+
+Statement* Statement::make_function
+(const std::string& name, const std::vector<std::string>& params,
+ Scope* body, Location loc)
+{ return new Function_declaration_statement(name, params, body, loc); }
+
 // Assignment_statement implementation
 
 Assignment_statement::~Assignment_statement()
@@ -210,4 +224,43 @@ Statement* Compound_statement::operator[](unsigned int i)
                 RIN_UNREACHABLE();
                 return NULL;
         }
+}
+
+// Return_statement implementation
+
+Bstatement* Return_statement::do_get_backend(Backend* backend)
+{
+        RIN_ASSERT(backend);
+
+        Bexpression* bexpr = NULL;
+        if (this->expr())
+                bexpr = this->expr()->get_backend(backend);
+
+        return backend->return_statement(bexpr, this->location());
+}
+
+// Function_declaration_statement implementation
+
+Bstatement* Function_declaration_statement::do_get_backend(Backend* backend)
+{
+        RIN_ASSERT(backend);
+
+        return backend->function_statement(this->name(), this->params(),
+                this->body(), this->location());
+}
+
+// Break_statement implementation
+
+Bstatement* Break_statement::do_get_backend(Backend* backend)
+{
+        RIN_ASSERT(backend);
+        return backend->break_statement(this->location());
+}
+
+// Continue_statement implementation
+
+Bstatement* Continue_statement::do_get_backend(Backend* backend)
+{
+        RIN_ASSERT(backend);
+        return backend->continue_statement(this->location());
 }

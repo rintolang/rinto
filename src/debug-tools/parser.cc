@@ -122,6 +122,20 @@ public:
                 return new Bexpression;
         }
 
+        Bexpression* integer_expression(const mpfr_t* val, Location loc)
+        {
+                if (val) {
+                        long i;
+                        char* abc = mpfr_get_str(NULL, &i, 10, 16, *val, MPFR_RNDN);
+                        rin_inform(loc, "CREATED INTEGER EXPRESSION WITH VAL: %s", abc);
+                        mpfr_free_str(abc);
+                        return new Bexpression;
+                }
+
+                rin_inform(loc, "CREATED INTEGER EXPRESSION WITH VAL: NULL");
+                return new Bexpression;
+        }
+
         Bexpression* binary_expression
         (RIN_OPERATOR op, Bexpression* left, Bexpression* right, Location loc)
         {
@@ -214,6 +228,46 @@ public:
                 delete inc;
                 delete then;
 
+                return new Bstatement;
+        }
+
+        Bstatement* return_statement(Bexpression* expr, Location loc)
+        {
+                rin_inform(loc, "CREATED RETURN STATEMENT\n");
+                delete expr;
+                return new Bstatement;
+        }
+
+        Bstatement* function_statement
+        (const std::string& name, const std::vector<std::string>& params,
+         Scope* body, Location loc)
+        {
+                rin_inform(loc, "CREATED FUNCTION DECLARATION: %s\n",
+                        &name[0]);
+                delete body;
+                return new Bstatement;
+        }
+
+        Bexpression* call_expression
+        (const std::string& name, const std::vector<Bexpression*>& args,
+         Location loc)
+        {
+                rin_inform(loc, "CREATED CALL EXPRESSION: %s\n",
+                        &name[0]);
+                for (auto itr = args.begin(); itr != args.end(); ++itr)
+                        delete *itr;
+                return new Bexpression;
+        }
+
+        Bstatement* break_statement(Location loc)
+        {
+                rin_inform(loc, "CREATED BREAK STATEMENT\n");
+                return new Bstatement;
+        }
+
+        Bstatement* continue_statement(Location loc)
+        {
+                rin_inform(loc, "CREATED CONTINUE STATEMENT\n");
                 return new Bstatement;
         }
 

@@ -135,6 +135,9 @@ public:
         // Build a float expression tree.
         Bexpression* float_expression(const mpfr_t* val, Location loc);
 
+        // Build an integer expression tree.
+        Bexpression* integer_expression(const mpfr_t* val, Location loc);
+
         /*
          * A conditional expression usually wraps a binary
          * expression, so its underlying Bexpression can
@@ -177,6 +180,25 @@ public:
 
         // Create a compound statement tree.
         Bstatement* compound_statement(Bstatement* first, Bstatement* second, Location loc);
+
+        // Create a return statement tree.
+        Bstatement* return_statement(Bexpression* expr, Location loc);
+
+        // Create a function declaration statement tree (stub).
+        Bstatement* function_statement
+        (const std::string& name, const std::vector<std::string>& params,
+         Scope* body, Location loc);
+
+        // Create a function call expression tree (stub).
+        Bexpression* call_expression
+        (const std::string& name, const std::vector<Bexpression*>& args,
+         Location loc);
+
+        // Create a break statement (placeholder).
+        Bstatement* break_statement(Location loc);
+
+        // Create a continue statement (placeholder).
+        Bstatement* continue_statement(Location loc);
 
 private:
 
