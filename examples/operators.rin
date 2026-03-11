@@ -1,0 +1,43 @@
+// operators.rin - Demonstrates all supported operators
+
+float a = 10.0f
+float b = 3.0f
+
+// Arithmetic
+float sum = a + b
+float diff = a - b
+float prod = a * b
+float quot = a / b
+float rem = a % b
+
+// Unary
+float neg = -a
+a++
+b--
+
+// Compound assignment
+a += 5.0f
+a -= 2.0f
+a *= 3.0f
+a /= 2.0f
+
+// Comparison and logical
+if a > b && b > 0.0f {
+	float result = a
+}
+
+if a == b || !a {
+	float result = b
+}
+
+if a != b {
+	float result = a + b
+}
+
+if a >= 10.0f {
+	float result = a
+}
+
+if b <= 5.0f {
+	float result = b
+}

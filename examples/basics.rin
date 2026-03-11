@@ -1,0 +1,8 @@
+// basics.rin - Demonstrates variable declarations and assignments
+
+float x
+float y = 3.14f
+float z = y * 2.0f + 1.0f
+
+x = 42.0f
+y = x + z
