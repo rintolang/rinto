@@ -95,6 +95,8 @@ Bexpression* Gcc_backend::unary_expression
                 code = TRUTH_NOT_EXPR;
         else if (op == OPER_NEG)
                 code = NEGATE_EXPR;
+        else if (op == OPER_BNOT)
+                code = BIT_NOT_EXPR;
         else
                 RIN_UNREACHABLE();
 
@@ -193,6 +195,15 @@ Bexpression* Gcc_backend::float_expression(const mpfr_t* val, Location loc)
         real_convert(&r2, TYPE_MODE(float_type_node), &r1);
 
         tree ret = build_real(float_type_node, r2);
+        return new Bexpression(ret);
+}
+
+Bexpression* Gcc_backend::integer_expression(const mpfr_t* val, Location loc)
+{
+        RIN_ASSERT(val);
+
+        long int_val = mpfr_get_si(*val, MPFR_RNDN);
+        tree ret = build_int_cst(integer_type_node, int_val);
         return new Bexpression(ret);
 }
 
@@ -437,6 +448,50 @@ Bstatement* Gcc_backend::compound_statement(Bstatement* first, Bstatement* secon
         return new Bstatement(stmt_list);
 }
 
+Bstatement* Gcc_backend::return_statement(Bexpression* expr, Location loc)
+{
+        tree expr_tree = NULL_TREE;
+        if (expr) {
+                expr_tree = expr->get_tree();
+                delete expr;
+        }
+
+        tree ret = build1_loc(gcc_location(loc), RETURN_EXPR,
+                void_type_node, expr_tree);
+
+        return new Bstatement(ret);
+}
+
+Bstatement* Gcc_backend::function_statement
+(const std::string& name, const std::vector<std::string>& params,
+ Scope* body, Location loc)
+{
+        // TODO: Full GCC function codegen is complex; stub for now.
+        delete body;
+        return this->invalid_statement();
+}
+
+Bexpression* Gcc_backend::call_expression
+(const std::string& name, const std::vector<Bexpression*>& args, Location loc)
+{
+        // TODO: Full GCC call expression codegen; stub for now.
+        for (auto itr = args.begin(); itr != args.end(); ++itr)
+                delete *itr;
+        return this->invalid_expression();
+}
+
+Bstatement* Gcc_backend::break_statement(Location loc)
+{
+        // TODO: Implement break for loops.
+        return this->invalid_statement();
+}
+
+Bstatement* Gcc_backend::continue_statement(Location loc)
+{
+        // TODO: Implement continue for loops.
+        return this->invalid_statement();
+}
+
 Gcc_backend* grin_be = new Gcc_backend;
 Parser* grin_parse = NULL;
 
@@ -503,6 +558,21 @@ enum tree_code operator_to_tree_code(RIN_OPERATOR op, tree type)
                 break;
         case OPER_GEQ:
                 code = GE_EXPR;
+                break;
+        case OPER_BAND:
+                code = BIT_AND_EXPR;
+                break;
+        case OPER_BOR:
+                code = BIT_IOR_EXPR;
+                break;
+        case OPER_BXOR:
+                code = BIT_XOR_EXPR;
+                break;
+        case OPER_LSHIFT:
+                code = LSHIFT_EXPR;
+                break;
+        case OPER_RSHIFT:
+                code = RSHIFT_EXPR;
                 break;
         default:
                 RIN_UNREACHABLE();

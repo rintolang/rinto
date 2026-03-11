@@ -20,6 +20,13 @@ Expression* Expression::make_conditional(Expression* cond, Location loc)
 Expression* Expression::make_float(const mpfr_t* val, Location loc)
 { return new Float_expression(val, loc); }
 
+Expression* Expression::make_integer(const mpfr_t* val, Location loc)
+{ return new Integer_expression(val, loc); }
+
+Expression* Expression::make_call
+(const std::string& name, std::vector<Expression*>& args, Location loc)
+{ return new Call_expression(name, args, loc); }
+
 // Invalid_expression implementation:
 
 Bexpression* Invalid_expression::do_get_backend(Backend* backend)
@@ -32,13 +39,15 @@ Bexpression* Unary_expression::do_get_backend(Backend* backend)
         RIN_ASSERT(backend);
 
         RIN_ASSERT(this->op() == OPER_INC || this->op() == OPER_DEC
-                   || this->op() == OPER_NOT || this->op() == OPER_NEG);
+                   || this->op() == OPER_NOT || this->op() == OPER_NEG
+                   || this->op() == OPER_BNOT);
 
         /*
          * Increment and decrement require an lvalue (variable reference).
-         * NOT and NEG can operate on any expression.
+         * NOT, NEG, and BNOT can operate on any expression.
          */
         if (this->op() != OPER_NOT && this->op() != OPER_NEG &&
+            this->op() != OPER_BNOT &&
             this->operand()->classification() != Expression::EXPRESSION_VAR_REFERENCE) {
                 rin_error_at(this->location(), "lvalue required as increment/decrement operand");
                 return backend->invalid_expression();
@@ -72,15 +81,17 @@ Bexpression* Binary_expression::do_get_backend(Backend* backend)
         RIN_ASSERT(OPERATOR_PRECEDENCE[this->op()] > -1);
 
         /*
-         * Binary expressions can only be formed from float, unary,
+         * Binary expressions can only be formed from float, integer, unary,
          * binary, or var reference children.
          */
         Expression_classification left_c = this->left()->classification();
-        RIN_ASSERT(left_c == EXPRESSION_FLOAT || left_c == EXPRESSION_BINARY ||
+        RIN_ASSERT(left_c == EXPRESSION_FLOAT || left_c == EXPRESSION_INTEGER ||
+                   left_c == EXPRESSION_BINARY ||
                    left_c == EXPRESSION_UNARY || left_c == EXPRESSION_VAR_REFERENCE);
 
         Expression_classification right_c = this->right()->classification();
-        RIN_ASSERT(right_c == EXPRESSION_FLOAT || right_c == EXPRESSION_BINARY ||
+        RIN_ASSERT(right_c == EXPRESSION_FLOAT || right_c == EXPRESSION_INTEGER ||
+                   right_c == EXPRESSION_BINARY ||
                    right_c == EXPRESSION_UNARY || right_c == EXPRESSION_VAR_REFERENCE);
 
         // Create backend expressions
@@ -112,9 +123,10 @@ Bexpression* Conditional_expression::do_get_backend(Backend* backend)
         RIN_ASSERT(backend);
         RIN_ASSERT(this->condition());
 
-        // Must be of type float, binary, unary, or var reference.
+        // Must be of type float, integer, binary, unary, or var reference.
         Expression_classification cls = this->condition()->classification();
-        RIN_ASSERT(cls == EXPRESSION_FLOAT || cls == EXPRESSION_BINARY ||
+        RIN_ASSERT(cls == EXPRESSION_FLOAT || cls == EXPRESSION_INTEGER ||
+                   cls == EXPRESSION_BINARY ||
                    cls == EXPRESSION_UNARY || cls == EXPRESSION_VAR_REFERENCE);
 
         // Build backend expression.
@@ -137,5 +149,29 @@ Bexpression* Float_expression::do_get_backend(Backend* backend)
          * deallocated.
          */
         return backend->float_expression(this->value(), this->location());
+}
+
+// Integer_expression implementation
+
+Bexpression* Integer_expression::do_get_backend(Backend* backend)
+{
+        RIN_ASSERT(backend);
+        return backend->integer_expression(this->value(), this->location());
+}
+
+// Call_expression implementation
+
+Bexpression* Call_expression::do_get_backend(Backend* backend)
+{
+        RIN_ASSERT(backend);
+
+        // Build backend expressions for each argument.
+        std::vector<Bexpression*> bargs;
+        for (auto itr = _args.begin(); itr != _args.end(); ++itr) {
+                Bexpression* barg = (*itr)->get_backend(backend);
+                bargs.push_back(barg);
+        }
+
+        return backend->call_expression(this->name(), bargs, this->location());
 }
 

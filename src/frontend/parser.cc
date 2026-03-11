@@ -1,9 +1,6 @@
 #include "parser.hpp"
 
 /*
- * TODO: Parser currently requires if-stmt, for-loop left braces to be on same
- * line as condition. Perhaps this should be changed?
- *
  * TODO: for-loop increment statement parses expressions.
  */
 
@@ -86,8 +83,40 @@ Statement* Parser::parse_next()
                         return this->parse_while_statement();
 
                 // Parse variable declaration
-                if (tk.rid() == RID_FLOAT)
+                if (tk.rid() == RID_FLOAT || tk.rid() == RID_INT
+                    || tk.rid() == RID_VAR)
                         return this->parse_var_dec_statement();
+
+                // Parse function declaration
+                if (tk.rid() == RID_FN)
+                        return this->parse_function_declaration();
+
+                // Parse return statement
+                if (tk.rid() == RID_RETURN)
+                        return this->parse_return_statement();
+
+                // Parse break statement
+                if (tk.rid() == RID_BREAK) {
+                        Token brk = this->_scanner->next_token();
+                        EXPECT_SEMICOLON_ERR(this->_scanner->next_token());
+                        return Statement::make_break(brk.location());
+                }
+
+                // Parse continue statement
+                if (tk.rid() == RID_CONTINUE) {
+                        Token cont = this->_scanner->next_token();
+                        EXPECT_SEMICOLON_ERR(this->_scanner->next_token());
+                        return Statement::make_continue(cont.location());
+                }
+
+                // Switch statement (not yet implemented)
+                if (tk.rid() == RID_SWITCH) {
+                        rin_error_at(tk.location(),
+                                "switch statements are not yet implemented");
+                        this->_scanner->next_token();
+                        this->_scanner->skip_line();
+                        return Statement::make_invalid(tk.location());
+                }
 
                 // Hanging reserved identifier
                 rin_error_at(tk.location(), "Malformed identifier %s", tk.str());
@@ -101,6 +130,13 @@ Statement* Parser::parse_next()
                                 "Expected operator after identifier, but received %s instead",
                                 op.str());
                         goto is_invalid_statement;
+                }
+
+                // Parse function call statement: name(args)
+                if (op.op() == OPER_LPAREN) {
+                        Token ident = this->_scanner->next_token();
+                        return this->parse_call_statement(
+                                *ident.identifier(), ident.location());
                 }
 
                 // Parse increment/decrement statement
@@ -132,6 +168,10 @@ Statement* Parser::parse_if_statement()
 
         // Gather condition.
         Expression* condition = this->parse_conditional_expression();
+
+        // Skip EOL tokens before opening brace (allows brace on next line)
+        while (this->_scanner->peek_token().classification() == Token::TOKEN_EOL)
+                this->_scanner->next_token();
 
         // Opening brace error
         Token expect_lbrace = this->_scanner->next_token();
@@ -287,6 +327,10 @@ Statement* Parser::parse_for_statement()
                         Statement::make_dec(unary);
         }
 
+        // Skip EOL tokens before opening brace (allows brace on next line)
+        while (this->_scanner->peek_token().classification() == Token::TOKEN_EOL)
+                this->_scanner->next_token();
+
         // Opening brace
         lbrace = this->_scanner->next_token();
         if (!EXPECT_LEFT_BRACE(lbrace)) {
@@ -333,6 +377,10 @@ Statement* Parser::parse_while_statement()
                 return Statement::make_invalid(while_rid.location());
         }
 
+        // Skip EOL tokens before opening brace (allows brace on next line)
+        while (this->_scanner->peek_token().classification() == Token::TOKEN_EOL)
+                this->_scanner->next_token();
+
         // Opening brace
         Token lbrace = this->_scanner->next_token();
         if (!EXPECT_LEFT_BRACE(lbrace)) {
@@ -360,9 +408,10 @@ Statement* Parser::parse_while_statement()
 
 Statement* Parser::parse_var_dec_statement()
 {
-        // Verify FLOAT token.
-        Token float_rid = this->_scanner->next_token();
-        RIN_ASSERT(float_rid.rid() == RID_FLOAT);
+        // Verify type keyword token (float, int, or var).
+        Token type_rid = this->_scanner->next_token();
+        RIN_ASSERT(type_rid.rid() == RID_FLOAT || type_rid.rid() == RID_INT
+                   || type_rid.rid() == RID_VAR);
 
         Token ident = this->_scanner->peek_token();
         if (ident.classification() != Token::TOKEN_IDENT) {
@@ -491,6 +540,182 @@ Statement* Parser::parse_inc_dec_statement()
                 Statement::make_dec(unary);
 }
 
+Statement* Parser::parse_function_declaration()
+{
+        // Consume 'fn' token.
+        Token fn_tok = this->_scanner->next_token();
+        RIN_ASSERT(fn_tok.classification() == Token::TOKEN_RID);
+        RIN_ASSERT(fn_tok.rid() == RID_FN);
+
+        // Read function name identifier.
+        Token name_tok = this->_scanner->next_token();
+        if (name_tok.classification() != Token::TOKEN_IDENT) {
+                rin_error_at(name_tok.location(),
+                        "Function declaration expected identifier but received %s instead",
+                        name_tok.str());
+                this->_scanner->skip_line();
+                return Statement::make_invalid(fn_tok.location());
+        }
+        std::string name = *name_tok.identifier();
+
+        // Consume '(' token.
+        Token lparen = this->_scanner->next_token();
+        if (lparen.classification() != Token::TOKEN_OPERATOR ||
+            lparen.op() != OPER_LPAREN) {
+                rin_error_at(lparen.location(),
+                        "Function declaration expected '(' but received %s instead",
+                        lparen.str());
+                this->_scanner->skip_line();
+                return Statement::make_invalid(fn_tok.location());
+        }
+
+        // Read comma-separated parameter identifiers until ')'.
+        std::vector<std::string> params;
+        Token next = this->_scanner->peek_token();
+        if (!(next.classification() == Token::TOKEN_OPERATOR &&
+              next.op() == OPER_RPAREN)) {
+                while (true) {
+                        Token param = this->_scanner->next_token();
+                        if (param.classification() != Token::TOKEN_IDENT) {
+                                rin_error_at(param.location(),
+                                        "Function parameter expected identifier but received %s instead",
+                                        param.str());
+                                this->_scanner->skip_line();
+                                return Statement::make_invalid(fn_tok.location());
+                        }
+                        params.push_back(*param.identifier());
+
+                        // Check for comma or closing paren.
+                        Token sep = this->_scanner->peek_token();
+                        if (sep.classification() == Token::TOKEN_OPERATOR &&
+                            sep.op() == OPER_RPAREN)
+                                break;
+
+                        // Expect comma between parameters.
+                        Token comma = this->_scanner->next_token();
+                        if (comma.classification() != Token::TOKEN_OPERATOR) {
+                                rin_error_at(comma.location(),
+                                        "Expected ',' or ')' in parameter list but received %s instead",
+                                        comma.str());
+                                this->_scanner->skip_line();
+                                return Statement::make_invalid(fn_tok.location());
+                        }
+                }
+        }
+
+        // Consume ')' token.
+        Token rparen = this->_scanner->next_token();
+        if (rparen.classification() != Token::TOKEN_OPERATOR ||
+            rparen.op() != OPER_RPAREN) {
+                rin_error_at(rparen.location(),
+                        "Function declaration expected ')' but received %s instead",
+                        rparen.str());
+                this->_scanner->skip_line();
+                return Statement::make_invalid(fn_tok.location());
+        }
+
+        // Consume '{' token.
+        Token lbrace = this->_scanner->next_token();
+        if (!EXPECT_LEFT_BRACE(lbrace)) {
+                rin_error_at(lbrace.location(),
+                        "Function declaration expected '{' but received %s instead",
+                        lbrace.str());
+                this->_scanner->skip_line();
+                return Statement::make_invalid(fn_tok.location());
+        }
+
+        // Enter function body scope and define parameters as named objects.
+        Scope* body = this->_backend->enter_scope();
+        for (auto itr = params.begin(); itr != params.end(); ++itr) {
+                body->define_obj(*itr, fn_tok.location());
+        }
+
+        // Parse function body.
+        this->parse(false);
+
+        return Statement::make_function(name, params, body, fn_tok.location());
+}
+
+Statement* Parser::parse_return_statement()
+{
+        // Consume 'return' token.
+        Token ret_tok = this->_scanner->next_token();
+        RIN_ASSERT(ret_tok.classification() == Token::TOKEN_RID);
+        RIN_ASSERT(ret_tok.rid() == RID_RETURN);
+
+        // Check for empty return (semicolon or EOL immediately after).
+        Token next = this->_scanner->peek_token();
+        if (EXPECT_SEMICOLON(next)) {
+                this->_scanner->next_token();
+                return Statement::make_return(NULL, ret_tok.location());
+        }
+
+        // Parse the return expression.
+        Expression* expr = this->parse_binary_expression();
+        if (!expr) {
+                this->_scanner->skip_line();
+                return Statement::make_invalid(ret_tok.location());
+        }
+
+        EXPECT_SEMICOLON_ERR(this->_scanner->next_token());
+        return Statement::make_return(expr, ret_tok.location());
+}
+
+Statement* Parser::parse_call_statement(const std::string& name, Location loc)
+{
+        // Consume '(' token.
+        Token lparen = this->_scanner->next_token();
+        RIN_ASSERT(lparen.classification() == Token::TOKEN_OPERATOR);
+        RIN_ASSERT(lparen.op() == OPER_LPAREN);
+
+        // Parse comma-separated argument expressions until ')'.
+        std::vector<Expression*> args;
+        Token next = this->_scanner->peek_token();
+        if (!(next.classification() == Token::TOKEN_OPERATOR &&
+              next.op() == OPER_RPAREN)) {
+                while (true) {
+                        Expression* arg = this->parse_binary_expression();
+                        if (!arg) {
+                                // Clean up already-parsed args.
+                                for (auto itr = args.begin(); itr != args.end(); ++itr)
+                                        delete *itr;
+                                this->_scanner->skip_line();
+                                return Statement::make_invalid(loc);
+                        }
+                        args.push_back(arg);
+
+                        // Check for closing paren.
+                        Token sep = this->_scanner->peek_token();
+                        if (sep.classification() == Token::TOKEN_OPERATOR &&
+                            sep.op() == OPER_RPAREN)
+                                break;
+
+                        // TODO: Comma handling -- currently expressions parse
+                        // until semicolon, so comma must be handled differently
+                        // once a comma operator exists.
+                        break;
+                }
+        }
+
+        // Consume ')' token.
+        Token rparen = this->_scanner->next_token();
+        if (rparen.classification() != Token::TOKEN_OPERATOR ||
+            rparen.op() != OPER_RPAREN) {
+                rin_error_at(rparen.location(),
+                        "Function call expected ')' but received %s instead",
+                        rparen.str());
+                for (auto itr = args.begin(); itr != args.end(); ++itr)
+                        delete *itr;
+                this->_scanner->skip_line();
+                return Statement::make_invalid(loc);
+        }
+
+        EXPECT_SEMICOLON_ERR(this->_scanner->next_token());
+
+        Expression* call = Expression::make_call(name, args, loc);
+        return Statement::make_expression(call, loc);
+}
+
 // --- Expressions ---
 
 /*
@@ -535,13 +760,21 @@ public:
 
                         this->_value.expr = flt;
 
+                } else if (cls == Token::TOKEN_INTEGER) {
+                        _type = FLOAT_NODE;
+
+                        Expression* intExpr = Expression::make_integer
+                                (token.int_value(), token.location());
+
+                        this->_value.expr = intExpr;
+
                 } else if (cls == Token::TOKEN_OPERATOR) {
                         _type = OPERATOR_NODE;
                         this->_value.oper = token.op();
 
                 } else {
                         rin_error_at(token.location(),
-                                "Token '%s' is not a float expression, operator, or variable reference",
+                                "Token '%s' is not an expression, operator, or variable reference",
                                 token.str());
                         _type = INVALID_NODE;
                 }
@@ -606,7 +839,8 @@ public:
                 if (this->_type != OPERATOR_NODE)
                         return false;
                 if (this->_value.oper == OPER_INC || this->_value.oper == OPER_DEC ||
-                    this->_value.oper == OPER_NOT || this->_value.oper == OPER_NEG)
+                    this->_value.oper == OPER_NOT || this->_value.oper == OPER_NEG ||
+                    this->_value.oper == OPER_BNOT)
                         return true;
                 return false;
         }
@@ -831,6 +1065,27 @@ Expression* Parser::parse_expression(RIN_OPERATOR terminal)
                         }
 
                         /*
+                         * Ternary expressions (? :) are not yet fully implemented.
+                         * Issue an error if encountered.
+                         */
+                        if (token.op() == OPER_TERNARY || token.op() == OPER_COLON) {
+                                this->_scanner->next_token();
+                                rin_error_at(token.location(),
+                                        "ternary expressions are not yet fully implemented");
+                                __abort_expr_parse(operators, output);
+                                return NULL;
+                        }
+
+                        /*
+                         * Bitwise NOT (~) is always unary. Treat it
+                         * the same as unary minus/negation.
+                         */
+                        if (token.op() == OPER_BNOT) {
+                                node = new Expression_node(token, this->backend());
+                                break;
+                        }
+
+                        /*
                          * Detect unary minus: '-' is unary when it appears at the
                          * start of an expression or after another operator (except
                          * close paren, INC, DEC which produce values).
@@ -853,6 +1108,7 @@ Expression* Parser::parse_expression(RIN_OPERATOR terminal)
                         // --- DOES NOT BREAK ---
 
                 case Token::TOKEN_FLOAT:
+                case Token::TOKEN_INTEGER:
                 case Token::TOKEN_IDENT:
                         node = new Expression_node(token, this->backend());
                         break;
@@ -899,7 +1155,6 @@ Expression* Parser::parse_expression(RIN_OPERATOR terminal)
 
                 case Token::TOKEN_STRING:
                 case Token::TOKEN_CHARACTER:
-                case Token::TOKEN_INTEGER:
                         token = this->_scanner->next_token();
                         prev_token = token;
                         rin_error_at(token.location(),

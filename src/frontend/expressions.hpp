@@ -8,6 +8,8 @@ class Binary_expression;
 class Var_expression;
 class Conditional_expression;
 class Float_expression;
+class Integer_expression;
+class Call_expression;
 
 // operators.cc
 extern int OPERATOR_PRECEDENCE[];
@@ -20,7 +22,8 @@ public:
         enum Expression_classification {
                 EXPRESSION_INVALID,  EXPRESSION_UNARY,
                 EXPRESSION_BINARY,   EXPRESSION_VAR_REFERENCE,
-                EXPRESSION_FLOAT,    EXPRESSION_CONDITIONAL
+                EXPRESSION_FLOAT,    EXPRESSION_CONDITIONAL,
+                EXPRESSION_INTEGER,  EXPRESSION_CALL
         };
 
         Expression(Expression_classification cl, Location loc)
@@ -61,8 +64,15 @@ public:
         // Make float expression
         static Expression* make_float(const mpfr_t* val, Location loc);
 
+        // Make integer expression
+        static Expression* make_integer(const mpfr_t* val, Location loc);
+
         // make conditional expression
         static Expression* make_conditional(Expression* cond, Location loc);
+
+        // Make a function call expression
+        static Expression* make_call
+        (const std::string& name, std::vector<Expression*>& args, Location loc);
 
         // Converts the expression to a unary expression type
         Unary_expression* unary_expression()
@@ -83,6 +93,14 @@ public:
         // Converts the expression to a float expression type
         Float_expression* float_expression()
         { return this->convert<Float_expression, EXPRESSION_FLOAT>(); }
+
+        // Converts the expression to an integer expression type
+        Integer_expression* integer_expression()
+        { return this->convert<Integer_expression, EXPRESSION_INTEGER>(); }
+
+        // Converts the expression to a call expression type
+        Call_expression* call_expression()
+        { return this->convert<Call_expression, EXPRESSION_CALL>(); }
 
         // Returns the backend representation of the expression
         Bexpression* get_backend(Backend* backend)
@@ -269,6 +287,63 @@ protected:
 
 private:
         mpfr_t _val;
+};
+
+// An integer expression, i.e: 42
+class Integer_expression : public Expression
+{
+public:
+        Integer_expression(const mpfr_t* val, Location loc)
+                : Expression(EXPRESSION_INTEGER, loc)
+        {
+                RIN_ASSERT(val);
+                mpfr_init_set(this->_val, *val, MPFR_RNDN);
+        }
+
+        ~Integer_expression()
+        { mpfr_clear(_val); }
+
+        // Return a pointer to the mpfr_t integer value.
+        mpfr_t* value()
+        { return &_val; }
+
+protected:
+        Bexpression* do_get_backend(Backend* backend);
+
+private:
+        mpfr_t _val;
+};
+
+// A function call expression, i.e: myFunc(a, b)
+class Call_expression : public Expression
+{
+public:
+        Call_expression
+        (const std::string& name, std::vector<Expression*>& args, Location loc)
+                : Expression(EXPRESSION_CALL, loc),
+                  _name(name), _args(args)
+        {}
+
+        ~Call_expression()
+        {
+                for (auto itr = _args.begin(); itr != _args.end(); ++itr)
+                        delete *itr;
+        }
+
+        // Return the function name
+        const std::string& name() const
+        { return this->_name; }
+
+        // Return the arguments
+        const std::vector<Expression*>& args() const
+        { return this->_args; }
+
+protected:
+        Bexpression* do_get_backend(Backend* backend);
+
+private:
+        std::string _name;
+        std::vector<Expression*> _args;
 };
 
 #endif // RIN_EXPRESSIONS_HPP

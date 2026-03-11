@@ -94,6 +94,15 @@ private:
         // Parses an increment/decrement statement
         Statement* parse_inc_dec_statement();
 
+        // Parses a function declaration
+        Statement* parse_function_declaration();
+
+        // Parses a return statement
+        Statement* parse_return_statement();
+
+        // Parses a function call as an expression statement
+        Statement* parse_call_statement(const std::string& name, Location loc);
+
         // Parse expressions
         Expression* parse_binary_expression();
 
