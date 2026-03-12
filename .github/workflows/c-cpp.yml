@@ -33,13 +33,9 @@ jobs:
       run: make test-parser
 
     - name: Run scanner unit tests
-      id: scanner-tests
-      continue-on-error: true
       run: ./build/test-scanner.out
 
     - name: Run parser unit tests
-      id: parser-tests
-      continue-on-error: true
       run: ./build/test-parser.out
 
     - name: Run scanner on examples
@@ -72,16 +68,3 @@ jobs:
             -I src/frontend -I src/debug-tools \
             src/frontend/ src/debug-tools/ \
             --error-exitcode=0
-
-    - name: Verify all tests passed
-      if: always()
-      run: |
-          if [ "${{ steps.scanner-tests.outcome }}" != "success" ]; then
-            echo "Scanner tests FAILED"
-            exit 1
-          fi
-          if [ "${{ steps.parser-tests.outcome }}" != "success" ]; then
-            echo "Parser tests FAILED"
-            exit 1
-          fi
-          echo "All tests passed"
