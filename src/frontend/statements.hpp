@@ -32,14 +32,14 @@ public:
                 STATEMENT_BREAK,      STATEMENT_CONTINUE
         };
 
-        Statement(Statement_classification cl, Location loc)
+        Statement(Statement_classification cl, const Location& loc)
                 : _classification(cl), _location(loc)
         {}
 
         virtual ~Statement() {}
 
         // Get the statement's classification
-        Statement_classification classification()
+        Statement_classification classification() const
         { return this->_classification; }
 
         // Get the statement's position
@@ -47,7 +47,7 @@ public:
         { return this->_location; }
 
         // Change location.
-        void set_location(Location loc)
+        void set_location(const Location& loc)
         { this->_location = loc; }
 
         // Set whether this statement is invalid
@@ -59,14 +59,14 @@ public:
         { return (this->_classification == STATEMENT_INVALID); }
 
         // Make an invalid statement which resolves to a compiler error
-        static Statement* make_invalid(Location loc);
+        static Statement* make_invalid(const Location& loc);
 
         // Make a variable declaration statement
         static Statement* make_variable_declaration(Named_object* var);
 
         // Make an assignment statement
         static Statement* make_assignment
-        (Expression* lhs, Expression* rhs, Location loc);
+        (Expression* lhs, Expression* rhs, const Location& loc);
 
         // Increment/decrement statements
         static Statement* make_inc(Expression* expr);
@@ -74,31 +74,31 @@ public:
 
         // If statement that calls then_block if cond resolves to true
         static Statement* make_if
-        (Expression* cond, Scope* then_block, Location loc);
+        (Expression* cond, Scope* then_block, const Location& loc);
 
         // Make a for statement
         static Statement* make_for
-        (Statement* ind, Statement* cond, Statement* inc, Location loc);
+        (Statement* ind, Statement* cond, Statement* inc, const Location& loc);
 
         // Make an expression statement
-        static Statement* make_expression(Expression* expr, Location loc);
+        static Statement* make_expression(Expression* expr, const Location& loc);
 
         static Statement* make_compound
-        (Statement* first, Statement* second, Location loc);
+        (Statement* first, Statement* second, const Location& loc);
 
         // Make a return statement (expr may be NULL for void return)
-        static Statement* make_return(Expression* expr, Location loc);
+        static Statement* make_return(Expression* expr, const Location& loc);
 
         // Make a function declaration statement
         static Statement* make_function
         (const std::string& name, const std::vector<std::string>& params,
-         Scope* body, Location loc);
+         Scope* body, const Location& loc);
 
         // Make a break statement
-        static Statement* make_break(Location loc);
+        static Statement* make_break(const Location& loc);
 
         // Make a continue statement
-        static Statement* make_continue(Location loc);
+        static Statement* make_continue(const Location& loc);
 
         // Cast statements to their higher-order types
         Invalid_statement* invalid_statement()
@@ -174,12 +174,12 @@ private:
 class Invalid_statement : public Statement
 {
 public:
-        Invalid_statement(Location loc)
+        explicit Invalid_statement(const Location& loc)
                 : Statement(STATEMENT_INVALID, loc)
         {}
 
 protected:
-        Bstatement* do_get_backend(Backend* backend)
+        Bstatement* do_get_backend(Backend* backend) override
         { RIN_UNREACHABLE(); }
 };
 
@@ -187,12 +187,12 @@ protected:
 class Assignment_statement : public Statement
 {
 public:
-        Assignment_statement(Expression* lhs, Expression* rhs, Location loc)
+        Assignment_statement(Expression* lhs, Expression* rhs, const Location& loc)
                 : Statement(STATEMENT_ASSIGNMENT, loc),
                   _lhs(lhs), _rhs(rhs)
         {}
 
-        ~Assignment_statement();
+        ~Assignment_statement() override;
 
         // Return left hand side of assignment
         Expression* lhs() const
@@ -203,7 +203,7 @@ public:
         { return this->_rhs; }
 
 protected:
-        Bstatement* do_get_backend(Backend* backend);
+        Bstatement* do_get_backend(Backend* backend) override;
 
 private:
         // _lhs is a variable reference
@@ -217,12 +217,12 @@ private:
 class Variable_declaration_statement : public Statement
 {
 public:
-        Variable_declaration_statement(Named_object* var)
+        explicit Variable_declaration_statement(Named_object* var)
                 : Statement(STATEMENT_VARIABLE_DECLARATION, var->location()),
                   _var(var)
         {}
 
-        ~Variable_declaration_statement() {}
+        ~Variable_declaration_statement() override {}
 
         Named_object* var()
         { return this->_var; }
@@ -230,7 +230,7 @@ public:
         const std::string& identifier() const;
 
 protected:
-        Bstatement* do_get_backend(Backend* backend);
+        Bstatement* do_get_backend(Backend* backend) override;
 
 private:
         // Not owned: Named_object is owned by the Scope's ident_map.
@@ -241,12 +241,12 @@ private:
 class If_statement : public Statement
 {
 public:
-        If_statement(Expression* cond, Scope* then_block, Location loc)
+        If_statement(Expression* cond, Scope* then_block, const Location& loc)
                 : Statement(STATEMENT_IF, loc), _cond(cond),
                   _then_block(then_block)
         {}
 
-        ~If_statement();
+        ~If_statement() override;
 
         Expression* condition() const
         { return this->_cond; }
@@ -261,7 +261,7 @@ public:
         { this->_else_block = else_block; }
 
 protected:
-        Bstatement* do_get_backend(Backend* backend);
+        Bstatement* do_get_backend(Backend* backend) override;
 
 private:
         Expression* _cond;         // Owned: condition expression
@@ -274,12 +274,12 @@ class For_statement : public Statement
 {
 public:
         For_statement
-        (Statement* ind, Statement* cond, Statement* inc, Location loc)
+        (Statement* ind, Statement* cond, Statement* inc, const Location& loc)
                 : Statement(STATEMENT_FOR, loc),
                   _ind(ind), _cond(cond), _inc(inc)
         {}
 
-        ~For_statement();
+        ~For_statement() override;
 
         void add_statements(Scope* statements)
         { this->_statements = statements; }
@@ -300,7 +300,7 @@ public:
         { return (this->_statements != NULL); }
 
 protected:
-        Bstatement* do_get_backend(Backend* backend);
+        Bstatement* do_get_backend(Backend* backend) override;
 
 private:
         // Owned: induction, condition, increment statements (may be NULL).
@@ -321,7 +321,7 @@ public:
                   _is_inc(is_inc), _expr(expr)
         {}
 
-        ~Inc_dec_statement()
+        ~Inc_dec_statement() override
         { delete this->_expr; }
 
         bool is_inc()
@@ -331,7 +331,7 @@ public:
         { return this->_expr; }
 
 protected:
-        Bstatement* do_get_backend(Backend* backend);
+        Bstatement* do_get_backend(Backend* backend) override;
 
 private:
         bool        _is_inc;
@@ -346,19 +346,19 @@ private:
 class Expression_statement : public Statement
 {
 public:
-        Expression_statement(Expression* expr, Location loc)
+        Expression_statement(Expression* expr, const Location& loc)
                 : Statement(STATEMENT_EXPRESSION, loc),
                   _expr(expr)
         {}
 
-        ~Expression_statement()
+        ~Expression_statement() override
         { delete this->_expr; }
 
         Expression* expr()
         { return this->_expr; }
 
 protected:
-        Bstatement* do_get_backend(Backend* backend);
+        Bstatement* do_get_backend(Backend* backend) override;
 
 private:
         Expression* _expr;
@@ -372,7 +372,7 @@ private:
 class Compound_statement : public Statement
 {
 public:
-        Compound_statement(Statement* first, Statement* second, Location loc)
+        Compound_statement(Statement* first, Statement* second, const Location& loc)
                 : Statement(STATEMENT_COMPOUND, loc)
         {
                 RIN_ASSERT(first);
@@ -381,7 +381,7 @@ public:
                 _second = second;
         }
 
-        ~Compound_statement();
+        ~Compound_statement() override;
 
         // Return the first statement.
         Statement* first()
@@ -395,7 +395,7 @@ public:
         Statement* operator[](unsigned int i);
 
 protected:
-        Bstatement* do_get_backend(Backend* backend);
+        Bstatement* do_get_backend(Backend* backend) override;
 
 private:
         Statement* _first;
@@ -406,12 +406,12 @@ private:
 class Return_statement : public Statement
 {
 public:
-        Return_statement(Expression* expr, Location loc)
+        Return_statement(Expression* expr, const Location& loc)
                 : Statement(STATEMENT_RETURN, loc),
                   _expr(expr)
         {}
 
-        ~Return_statement()
+        ~Return_statement() override
         { delete this->_expr; }
 
         // Return the expression (may be NULL for void return)
@@ -419,7 +419,7 @@ public:
         { return this->_expr; }
 
 protected:
-        Bstatement* do_get_backend(Backend* backend);
+        Bstatement* do_get_backend(Backend* backend) override;
 
 private:
         Expression* _expr;
@@ -431,12 +431,12 @@ class Function_declaration_statement : public Statement
 public:
         Function_declaration_statement
         (const std::string& name, const std::vector<std::string>& params,
-         Scope* body, Location loc)
+         Scope* body, const Location& loc)
                 : Statement(STATEMENT_FUNCTION, loc),
                   _name(name), _params(params), _body(body)
         {}
 
-        ~Function_declaration_statement()
+        ~Function_declaration_statement() override
         { delete this->_body; }
 
         // Return the function name
@@ -452,7 +452,7 @@ public:
         { return this->_body; }
 
 protected:
-        Bstatement* do_get_backend(Backend* backend);
+        Bstatement* do_get_backend(Backend* backend) override;
 
 private:
         std::string _name;
@@ -464,24 +464,24 @@ private:
 class Break_statement : public Statement
 {
 public:
-        Break_statement(Location loc)
+        explicit Break_statement(const Location& loc)
                 : Statement(STATEMENT_BREAK, loc)
         {}
 
 protected:
-        Bstatement* do_get_backend(Backend* backend);
+        Bstatement* do_get_backend(Backend* backend) override;
 };
 
 // A continue statement skips to the next iteration of the innermost loop
 class Continue_statement : public Statement
 {
 public:
-        Continue_statement(Location loc)
+        explicit Continue_statement(const Location& loc)
                 : Statement(STATEMENT_CONTINUE, loc)
         {}
 
 protected:
-        Bstatement* do_get_backend(Backend* backend);
+        Bstatement* do_get_backend(Backend* backend) override;
 };
 
 #endif // RIN_STATEMENTS_HPP

@@ -19,7 +19,7 @@ public:
 	void set_identifier(const std::string& ident)
 	{ this->_identifier = ident; }
 
-	void set_location(Location loc)
+	void set_location(const Location& loc)
 	{ this->_location = loc; }
 
 	bool has_identifier()
@@ -44,40 +44,40 @@ public:
 	bool had_error() const { return _had_error; }
 	void reset_error() { _had_error = false; }
 
-	Bvariable* variable(Named_object* obj) {
+	Bvariable* variable(Named_object* obj) override {
 		Bvariable* var = new Bvariable;
 		if (obj) { var->set_identifier(obj->identifier()); var->set_location(obj->location()); }
 		return var;
 	}
 
-	Bexpression* invalid_expression()    { _had_error = true; return new Bexpression; }
-	Bstatement*  invalid_statement()     { _had_error = true; return new Bstatement; }
+	Bexpression* invalid_expression() override    { _had_error = true; return new Bexpression; }
+	Bstatement*  invalid_statement() override     { _had_error = true; return new Bstatement; }
 
-	Bexpression* var_reference(Bvariable* v, Location)             { delete v; return new Bexpression; }
-	Bexpression* conditional_expression(Bexpression* c, Location)  { delete c; return new Bexpression; }
-	Bexpression* unary_expression(RIN_OPERATOR, Bexpression* e, Location) { delete e; return new Bexpression; }
-	Bexpression* float_expression(const mpfr_t*, Location)         { return new Bexpression; }
-	Bexpression* integer_expression(const mpfr_t*, Location)       { return new Bexpression; }
-	Bexpression* binary_expression(RIN_OPERATOR, Bexpression* l, Bexpression* r, Location) { delete l; delete r; return new Bexpression; }
-	Bexpression* call_expression(const std::string&, const std::vector<Bexpression*>& a, Location) {
+	Bexpression* var_reference(Bvariable* v, const Location&) override             { delete v; return new Bexpression; }
+	Bexpression* conditional_expression(Bexpression* c, const Location&) override  { delete c; return new Bexpression; }
+	Bexpression* unary_expression(RIN_OPERATOR, Bexpression* e, const Location&) override { delete e; return new Bexpression; }
+	Bexpression* float_expression(const mpfr_t*, const Location&) override         { return new Bexpression; }
+	Bexpression* integer_expression(const mpfr_t*, const Location&) override       { return new Bexpression; }
+	Bexpression* binary_expression(RIN_OPERATOR, Bexpression* l, Bexpression* r, const Location&) override { delete l; delete r; return new Bexpression; }
+	Bexpression* call_expression(const std::string&, const std::vector<Bexpression*>& a, const Location&) override {
 		for (auto i = a.begin(); i != a.end(); ++i) delete *i;
 		return new Bexpression;
 	}
 
-	Bstatement* var_dec_statement(Bvariable* v)              { delete v; return new Bstatement; }
-	Bstatement* inc_statement(Bexpression* e, Location)      { delete e; return new Bstatement; }
-	Bstatement* dec_statement(Bexpression* e, Location)      { delete e; return new Bstatement; }
-	Bstatement* expression_statement(Bexpression* e, Location) { delete e; return new Bstatement; }
-	Bstatement* compound_statement(Bstatement* a, Bstatement* b, Location) { delete a; delete b; return new Bstatement; }
-	Bstatement* assignment_statement(Bexpression* l, Bexpression* r, Location) { delete l; delete r; return new Bstatement; }
-	Bstatement* return_statement(Bexpression* e, Location)   { delete e; return new Bstatement; }
-	Bstatement* break_statement(Location)    { return new Bstatement; }
-	Bstatement* continue_statement(Location) { return new Bstatement; }
+	Bstatement* var_dec_statement(Bvariable* v) override              { delete v; return new Bstatement; }
+	Bstatement* inc_statement(Bexpression* e, const Location&) override      { delete e; return new Bstatement; }
+	Bstatement* dec_statement(Bexpression* e, const Location&) override      { delete e; return new Bstatement; }
+	Bstatement* expression_statement(Bexpression* e, const Location&) override { delete e; return new Bstatement; }
+	Bstatement* compound_statement(Bstatement* a, Bstatement* b, const Location&) override { delete a; delete b; return new Bstatement; }
+	Bstatement* assignment_statement(Bexpression* l, Bexpression* r, const Location&) override { delete l; delete r; return new Bstatement; }
+	Bstatement* return_statement(Bexpression* e, const Location&) override   { delete e; return new Bstatement; }
+	Bstatement* break_statement(const Location&) override    { return new Bstatement; }
+	Bstatement* continue_statement(const Location&) override { return new Bstatement; }
 
 	// Scopes are owned by their statements; do NOT delete here.
-	Bstatement* if_statement(Bexpression* e, Scope*, Scope*, Location) { delete e; return new Bstatement; }
-	Bstatement* for_statement(Bstatement* a, Bstatement* b, Bstatement* c, Scope*, Location) { delete a; delete b; delete c; return new Bstatement; }
-	Bstatement* function_statement(const std::string&, const std::vector<std::string>&, Scope*, Location) { return new Bstatement; }
+	Bstatement* if_statement(Bexpression* e, Scope*, Scope*, const Location&) override { delete e; return new Bstatement; }
+	Bstatement* for_statement(Bstatement* a, Bstatement* b, Bstatement* c, Scope*, const Location&) override { delete a; delete b; delete c; return new Bstatement; }
+	Bstatement* function_statement(const std::string&, const std::vector<std::string>&, Scope*, const Location&) override { return new Bstatement; }
 
 private:
 	bool _had_error;

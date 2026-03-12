@@ -3,28 +3,28 @@
 const char open_quote[]  = "'";
 const char close_quote[] = "'";
 
-void rin_be_error_at(const Location loc, const std::string& errmsg)
+void rin_be_error_at(const Location& loc, const std::string& errmsg)
 {
-        printf("[DEBUG ERROR] %s:%d:%d: %s\n", &loc.filename[0],
-               loc.line, loc.column, &errmsg[0]);
+        printf("[DEBUG ERROR] %s:%d:%d: %s\n", loc.filename.c_str(),
+               loc.line, loc.column, errmsg.c_str());
 }
 
-void rin_be_warning_at(const Location loc, int opt, const std::string& warningmsg)
+void rin_be_warning_at(const Location& loc, int opt, const std::string& warningmsg)
 {
-        printf("[DEBUG WARNING] %s:%d:%d: %s\n", &loc.filename[0],
-               loc.line, loc.column, &warningmsg[0]);
+        printf("[DEBUG WARNING] %s:%d:%d: %s\n", loc.filename.c_str(),
+               loc.line, loc.column, warningmsg.c_str());
 }
 
-void rin_be_fatal_error(const Location loc, const std::string& errmsg)
+void rin_be_fatal_error(const Location& loc, const std::string& errmsg)
 {
-        printf("[DEBUG FATAL] %s:%d:%d: %s\n", &loc.filename[0],
-               loc.line, loc.column, &errmsg[0]);
+        printf("[DEBUG FATAL] %s:%d:%d: %s\n", loc.filename.c_str(),
+               loc.line, loc.column, errmsg.c_str());
 }
 
-void rin_be_inform(const Location loc, const std::string& infomsg)
+void rin_be_inform(const Location& loc, const std::string& infomsg)
 {
-        printf("[DEBUG INFORM] %s:%d:%d: %s\n", &loc.filename[0],
-               loc.line, loc.column, &infomsg[0]);
+        printf("[DEBUG INFORM] %s:%d:%d: %s\n", loc.filename.c_str(),
+               loc.line, loc.column, infomsg.c_str());
 }
 
 void rin_be_get_quotechars(const char** open_quo, const char** close_quo)
@@ -34,7 +34,7 @@ void rin_be_get_quotechars(const char** open_quo, const char** close_quo)
 }
 
 // See: https://hg.mozilla.org/mozilla-central/file/98fa9c0cff7a/js/src/jsutil.cpp#l66
-void do_recoverable_abort()
+__attribute__((noreturn)) void do_recoverable_abort()
 {
 #if defined(WIN32)
         /*
@@ -53,4 +53,5 @@ void do_recoverable_abort()
 #else
         raise(SIGABRT);  /* To continue from here in GDB: "signal 0". */
 #endif
+        __builtin_unreachable();
 }

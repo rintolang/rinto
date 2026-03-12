@@ -43,7 +43,7 @@ static int vasprintf(char** strp, const char* fmt, va_list ap)
         int len = vsnprintf(NULL, 0, fmt, ap_copy);
         va_end(ap_copy);
         if (len < 0) return -1;
-        *strp = (char*)malloc(len + 1);
+        *strp = static_cast<char*>(malloc(len + 1));
         if (!*strp) return -1;
         return vsnprintf(*strp, len + 1, fmt, ap);
 }
@@ -146,7 +146,7 @@ const char* rin_close_quote()
         return cached_close_quote;
 }
 
-void rin_error_at(const Location loc, const char* fmt, ...)
+void rin_error_at(const Location& loc, const char* fmt, ...)
 {
         va_list ap;
 
@@ -155,7 +155,7 @@ void rin_error_at(const Location loc, const char* fmt, ...)
         va_end(ap);
 }
 
-void rin_warning_at(const Location loc, int opt, const char* fmt, ...)
+void rin_warning_at(const Location& loc, int opt, const char* fmt, ...)
 {
         if (opt > rin_warning_level)
                 return;
@@ -167,7 +167,7 @@ void rin_warning_at(const Location loc, int opt, const char* fmt, ...)
         va_end(ap);
 }
 
-void rin_fatal_error(const Location loc, const char* fmt, ...)
+void rin_fatal_error(const Location& loc, const char* fmt, ...)
 {
         va_list ap;
 
@@ -176,7 +176,7 @@ void rin_fatal_error(const Location loc, const char* fmt, ...)
         va_end(ap);
 }
 
-void rin_inform(const Location loc, const char* fmt, ...)
+void rin_inform(const Location& loc, const char* fmt, ...)
 {
         va_list ap;
 
@@ -186,7 +186,7 @@ void rin_inform(const Location loc, const char* fmt, ...)
 }
 
 // rin_debug uses normal printf formatting, not GCC diagnostic formatting.
-void rin_debug(const Location loc, const char* fmt, ...)
+void rin_debug(const Location& loc, const char* fmt, ...)
 {
         va_list ap;
 

@@ -1,14 +1,14 @@
 // statements.cc - Statement factory methods and backend code generation
 #include "statements.hpp"
 
-Statement* Statement::make_invalid(Location loc)
+Statement* Statement::make_invalid(const Location& loc)
 { return new Invalid_statement(loc); }
 
 Statement* Statement::make_variable_declaration(Named_object* var)
 { return new Variable_declaration_statement(var); }
 
 Statement* Statement::make_assignment
-(Expression* lhs, Expression* rhs, Location loc)
+(Expression* lhs, Expression* rhs, const Location& loc)
 { return new Assignment_statement(lhs, rhs, loc); }
 
 Statement* Statement::make_inc(Expression* expr)
@@ -18,32 +18,32 @@ Statement* Statement::make_dec(Expression* expr)
 { return new Inc_dec_statement(expr, false); }
 
 Statement* Statement::make_if
-(Expression* cond, Scope* then_block, Location loc)
+(Expression* cond, Scope* then_block, const Location& loc)
 { return new If_statement(cond, then_block, loc); }
 
 Statement* Statement::make_for
-(Statement* ind, Statement* cond, Statement* inc, Location loc)
+(Statement* ind, Statement* cond, Statement* inc, const Location& loc)
 { return new For_statement(ind, cond, inc, loc); }
 
-Statement* Statement::make_expression(Expression* expr, Location loc)
+Statement* Statement::make_expression(Expression* expr, const Location& loc)
 { return new Expression_statement(expr, loc); }
 
 Statement* Statement::make_compound
-(Statement* first, Statement* second, Location loc)
+(Statement* first, Statement* second, const Location& loc)
 { return new Compound_statement(first, second, loc); }
 
-Statement* Statement::make_return(Expression* expr, Location loc)
+Statement* Statement::make_return(Expression* expr, const Location& loc)
 { return new Return_statement(expr, loc); }
 
-Statement* Statement::make_break(Location loc)
+Statement* Statement::make_break(const Location& loc)
 { return new Break_statement(loc); }
 
-Statement* Statement::make_continue(Location loc)
+Statement* Statement::make_continue(const Location& loc)
 { return new Continue_statement(loc); }
 
 Statement* Statement::make_function
 (const std::string& name, const std::vector<std::string>& params,
- Scope* body, Location loc)
+ Scope* body, const Location& loc)
 { return new Function_declaration_statement(name, params, body, loc); }
 
 // Assignment_statement implementation
@@ -60,12 +60,12 @@ Bstatement* Assignment_statement::do_get_backend(Backend* backend)
         RIN_ASSERT(this->lhs() != NULL && this->rhs() != NULL);
 
         // Left-hand side of assignment statement must be a variable reference.
-        Expression* lhs = this->lhs();
-        RIN_ASSERT(lhs->classification() == Expression::EXPRESSION_VAR_REFERENCE);
+        Expression* lhs_expr = this->lhs();
+        RIN_ASSERT(lhs_expr->classification() == Expression::EXPRESSION_VAR_REFERENCE);
 
         // Right-hand side can be float, integer, binary, unary, or var reference.
-        Expression* rhs = this->rhs();
-        Expression::Expression_classification rhs_c = rhs->classification();
+        Expression* rhs_expr = this->rhs();
+        Expression::Expression_classification rhs_c = rhs_expr->classification();
         RIN_ASSERT(rhs_c == Expression::EXPRESSION_FLOAT   ||
                    rhs_c == Expression::EXPRESSION_INTEGER  ||
                    rhs_c == Expression::EXPRESSION_BINARY   ||
@@ -74,11 +74,11 @@ Bstatement* Assignment_statement::do_get_backend(Backend* backend)
 
         /*
          * Build underlying expressions. Running get_backend()
-         * on lhs will check whether the variable reference
+         * on lhs_expr will check whether the variable reference
          * is defined on the current scope.
          */
-        Bexpression* blhs = lhs->get_backend(backend);
-        Bexpression* brhs = rhs->get_backend(backend);
+        Bexpression* blhs = lhs_expr->get_backend(backend);
+        Bexpression* brhs = rhs_expr->get_backend(backend);
 
         // Build assignment statement.
         return backend->assignment_statement(blhs, brhs, this->location());
@@ -97,8 +97,8 @@ Bstatement* Variable_declaration_statement::do_get_backend(Backend* backend)
         RIN_ASSERT(backend);
         RIN_ASSERT(this->var());
 
-        Bvariable* var = backend->variable(this->var());
-        return backend->var_dec_statement(var);
+        Bvariable* bvar = backend->variable(this->var());
+        return backend->var_dec_statement(bvar);
 }
 
 // If_statement implementation
@@ -213,12 +213,12 @@ Bstatement* Compound_statement::do_get_backend(Backend* backend)
         }
 
         // Build statements.
-        Bstatement* first = this->first()->get_backend(backend);
-        Bstatement* second = this->second()->get_backend(backend);
-        RIN_ASSERT(first != NULL && second != NULL);
+        Bstatement* bfirst = this->first()->get_backend(backend);
+        Bstatement* bsecond = this->second()->get_backend(backend);
+        RIN_ASSERT(bfirst != NULL && bsecond != NULL);
 
         // Build backend compound statement.
-        return backend->compound_statement(first, second, this->location());
+        return backend->compound_statement(bfirst, bsecond, this->location());
 }
 
 Statement* Compound_statement::operator[](unsigned int i)

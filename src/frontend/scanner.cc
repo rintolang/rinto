@@ -46,25 +46,25 @@ Token::Token(const Token& tok)
         this->token_string       = tok.token_string;
 }
 
-Token Token::make_invalid_token(const std::string& str, Location loc)
+Token Token::make_invalid_token(const std::string& str, const Location& loc)
 {
         Token tok(TOKEN_INVALID, str, loc);
         return tok;
 }
 
-Token Token::make_eof_token(Location loc)
+Token Token::make_eof_token(const Location& loc)
 {
         Token tok(TOKEN_EOF, __eof_string__, loc);
         return tok;
 }
 
-Token Token::make_eol_token(Location loc)
+Token Token::make_eol_token(const Location& loc)
 {
         Token tok(TOKEN_EOL, __eol_string__, loc);
         return tok;
 }
 
-Token Token::make_rid_token(RID rid, Location loc)
+Token Token::make_rid_token(RID rid, const Location& loc)
 {
         Token tok(TOKEN_RID, rid_as_string(rid), loc);
         tok.value.rid = rid;
@@ -72,28 +72,28 @@ Token Token::make_rid_token(RID rid, Location loc)
 }
 
 Token Token::make_ident_token
-(std::string val, Location loc)
+(const std::string& val, const Location& loc)
 {
         Token tok(TOKEN_IDENT, val, loc);
         tok.value.id_name = &tok.token_string;
         return tok;
 }
 
-Token Token::make_operator_token(RIN_OPERATOR op, Location loc)
+Token Token::make_operator_token(RIN_OPERATOR op, const Location& loc)
 {
         Token tok(TOKEN_OPERATOR, operator_name(op), loc);
         tok.value.op_value = op;
         return tok;
 }
 
-Token Token::make_float_token(const std::string& str, Location loc)
+Token Token::make_float_token(const std::string& str, const Location& loc)
 {
         Token tok(TOKEN_FLOAT, str, loc);
         mpfr_init_set_str(tok.value.float_value, str.c_str(), 10, MPFR_RNDN);
         return tok;
 }
 
-Token Token::make_integer_token(const std::string& str, Location loc)
+Token Token::make_integer_token(const std::string& str, const Location& loc)
 {
         Token tok(TOKEN_INTEGER, str, loc);
         mpfr_init_set_str(tok.value.float_value, str.c_str(), 0, MPFR_RNDN);
@@ -211,7 +211,7 @@ void Scanner::skip_line()
         }
 }
 
-void Scanner::acknowledge(Token tok)
+void Scanner::acknowledge(const Token& tok)
 {
         if (tok.classification() != Token::TOKEN_OPERATOR)
                 return;
@@ -227,7 +227,7 @@ void Scanner::acknowledge(Token tok)
         }
 }
 
-void Scanner::expect_match(Token tok, RIN_OPERATOR match)
+void Scanner::expect_match(const Token& tok, RIN_OPERATOR match)
 {
         if (tok.classification() != Token::TOKEN_OPERATOR)
                 return;
@@ -283,7 +283,7 @@ int Scanner::skip_comment()
                 if (last_char == -1)
                         return chars;
                 if (last_char == '*' && src->peek() == '/') {
-                        last_char = src->get_char();
+                        src->get_char();
                         chars += 2;
                         break;
                 }
@@ -330,12 +330,12 @@ Token Scanner::scan_token()
         /* Gather multi-char operator */
         while (is_operator(tokenStr) || (src->peek() != -1 && is_operator(tokenStr + (char)src->peek()))) {
                 if (src->peek() != -1 && is_operator(tokenStr + (char)src->peek())) {
-                        int ch = src->get_char();
-                        if (ch == '/' && (src->peek() == '/' || src->peek() == '*')) {
+                        int ch2 = src->get_char();
+                        if (ch2 == '/' && (src->peek() == '/' || src->peek() == '*')) {
                                 skip_comment();
                                 goto assemble_oper;
                         }
-                        tokenStr += (int)ch;
+                        tokenStr += (int)ch2;
                         continue;
                 }
 

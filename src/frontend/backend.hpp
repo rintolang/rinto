@@ -30,9 +30,9 @@ extern void delete_stmt(Bstatement* stmt);
 
 // A location represents a position in a file.
 struct Location {
-        int offset;
-        int line;
-        int column;
+        int offset = 0;
+        int line = 0;
+        int column = 0;
         std::string filename;
 };
 
@@ -50,13 +50,13 @@ inline bool operator==(const Location& lhs, const Location& rhs)
 }
 
 // Diagnostics.hpp
-extern void rin_error_at(const Location, const char* fmt, ...);
+extern void rin_error_at(const Location&, const char* fmt, ...);
 
 // A named object is anything that is referenced by an identifier
 class Named_object
 {
 public:
-        Named_object(const std::string& ident, Location loc)
+        Named_object(const std::string& ident, const Location& loc)
                 : _identifier(ident), _location(loc)
         {}
 
@@ -85,7 +85,7 @@ public:
          * scope can reference variables defined by their ancestors.
          * If parent is NULL, then the scope is the supercontext.
          */
-        Scope(Scope* parent = NULL)
+        explicit Scope(Scope* parent = NULL)
                 : _parent(parent)
         {}
 
@@ -135,10 +135,10 @@ public:
          * As long as statements are evaluated sequentially, then there is
          * no risk of a statement referencing an undefined object.
          */
-        Named_object* define_obj(const std::string& ident, Location loc)
+        Named_object* define_obj(const std::string& ident, const Location& loc)
         {
                 if (this->is_defined(ident)) {
-                        rin_error_at(loc, "Redefinition of '%s'", &(ident)[0]);
+                        rin_error_at(loc, "Redefinition of '%s'", ident.c_str());
                         return NULL;
                 }
 
@@ -202,6 +202,9 @@ public:
                 this->_supercontext = new Scope(NULL);
                 this->_current_scope = this->_supercontext;
         }
+
+        Backend(const Backend&) = delete;
+        Backend& operator=(const Backend&) = delete;
 
         virtual ~Backend()
         {
@@ -268,27 +271,27 @@ public:
 
         // Return an expression for a unary operation.
         virtual Bexpression* unary_expression
-        (RIN_OPERATOR op, Bexpression* expr, Location) = 0;
+        (RIN_OPERATOR op, Bexpression* expr, const Location&) = 0;
 
         // Return an expression for a binary operation.
         virtual Bexpression* binary_expression
-        (RIN_OPERATOR op, Bexpression* left, Bexpression* right, Location) = 0;
+        (RIN_OPERATOR op, Bexpression* left, Bexpression* right, const Location&) = 0;
 
         // Return an expression which is a reference to a variable.
-        virtual Bexpression* var_reference(Bvariable* var, Location) = 0;
+        virtual Bexpression* var_reference(Bvariable* var, const Location&) = 0;
 
         /*
          * Return an expression which is a reference to a float.
          * Val pointer will be deleted along with underlying expression,
          * therefore it must be reinitialized/copied using mpfr_init_set.
          */
-        virtual Bexpression* float_expression(const mpfr_t* val, Location) = 0;
+        virtual Bexpression* float_expression(const mpfr_t* val, const Location&) = 0;
 
         // Return an expression which is a reference to an integer.
-        virtual Bexpression* integer_expression(const mpfr_t* val, Location) = 0;
+        virtual Bexpression* integer_expression(const mpfr_t* val, const Location&) = 0;
 
         // Return a reference to a conditional expression
-        virtual Bexpression* conditional_expression(Bexpression* cond, Location) = 0;
+        virtual Bexpression* conditional_expression(Bexpression* cond, const Location&) = 0;
 
         // Statements.
 
@@ -303,14 +306,14 @@ public:
          * can be assigned to, so lhs must be a var reference expression.
          */
         virtual Bstatement* assignment_statement
-        (Bexpression* lhs, Bexpression* rhs, Location) = 0;
+        (Bexpression* lhs, Bexpression* rhs, const Location&) = 0;
 
         /*
          * Create an increment/decrement statement. Expression must be a
          * unary increment/decrement expression.
          */
-        virtual Bstatement* inc_statement(Bexpression*, Location) = 0;
-        virtual Bstatement* dec_statement(Bexpression*, Location) = 0;
+        virtual Bstatement* inc_statement(Bexpression*, const Location&) = 0;
+        virtual Bstatement* dec_statement(Bexpression*, const Location&) = 0;
 
         /*
          * Returns an if-statement. The expression should be a conditional
@@ -318,7 +321,7 @@ public:
          * if-statement's constituent statements. The else_block may be NULL.
          */
         virtual Bstatement* if_statement
-        (Bexpression*, Scope*, Scope* else_block, Location) = 0;
+        (Bexpression*, Scope*, Scope* else_block, const Location&) = 0;
 
         /*
          * Returns a for-loop statement. Cond must be a conditional statement,
@@ -327,23 +330,23 @@ public:
          * must be parsed by this function.
          */
         virtual Bstatement* for_statement
-        (Bstatement*, Bstatement*, Bstatement*, Scope*, Location) = 0;
+        (Bstatement*, Bstatement*, Bstatement*, Scope*, const Location&) = 0;
 
         /*
          * Returns an expression wrapped as a statement. The expression must
          * be conditional.
          */
-        virtual Bstatement* expression_statement(Bexpression* expr, Location) = 0;
+        virtual Bstatement* expression_statement(Bexpression* expr, const Location&) = 0;
 
         /*
          * Return a compound statement which builds a stored pair of
          * statements consecutively.
          */
         virtual Bstatement* compound_statement
-        (Bstatement* first, Bstatement* second, Location loc) = 0;
+        (Bstatement* first, Bstatement* second, const Location& loc) = 0;
 
         // Returns a return statement. Expression may be NULL for void return.
-        virtual Bstatement* return_statement(Bexpression* expr, Location) = 0;
+        virtual Bstatement* return_statement(Bexpression* expr, const Location&) = 0;
 
         /*
          * Returns a function declaration statement. Params are parameter
@@ -351,18 +354,18 @@ public:
          */
         virtual Bstatement* function_statement
         (const std::string& name, const std::vector<std::string>& params,
-         Scope* body, Location) = 0;
+         Scope* body, const Location&) = 0;
 
         // Returns a function call expression.
         virtual Bexpression* call_expression
         (const std::string& name, const std::vector<Bexpression*>& args,
-         Location) = 0;
+         const Location&) = 0;
 
         // Returns a break statement to exit the innermost loop.
-        virtual Bstatement* break_statement(Location) = 0;
+        virtual Bstatement* break_statement(const Location&) = 0;
 
         // Returns a continue statement to skip to the next loop iteration.
-        virtual Bstatement* continue_statement(Location) = 0;
+        virtual Bstatement* continue_statement(const Location&) = 0;
 
 private:
         Scope* _supercontext;

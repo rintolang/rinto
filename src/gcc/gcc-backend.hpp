@@ -33,12 +33,12 @@
 class Gcc_tree
 {
 public:
-        Gcc_tree(tree t) : _t(t) {}
+        explicit Gcc_tree(tree t) : _t(t) {}
 
         tree get_tree() const
         { return this->_t; }
 
-        tree set_tree(tree t)
+        void set_tree(tree t)
         { this->_t = t;}
 
 private:
@@ -49,13 +49,13 @@ private:
 
 // Backend representation of an expression.
 class Bexpression : public Gcc_tree
-{ public: Bexpression(tree t) : Gcc_tree(t) {} };
+{ public: explicit Bexpression(tree t) : Gcc_tree(t) {} };
 
 // Backend representation of a statement.
 class Bstatement : public Gcc_tree
 {
 public:
-        Bstatement(tree t) : Gcc_tree(t) {}
+        explicit Bstatement(tree t) : Gcc_tree(t) {}
 
         // Whether this statement represents a block.
 
@@ -75,7 +75,7 @@ private:
  * the same as any other Gcc_tree structure.
  */
 class Bvariable : public Gcc_tree
-{ public: Bvariable(tree t) : Gcc_tree(t) {} };
+{ public: explicit Bvariable(tree t) : Gcc_tree(t) {} };
 
 // Interface for creating TREE_CHAIN's.
 struct TreeChain {
@@ -102,7 +102,7 @@ class Gcc_backend : public Backend
 {
 public:
         Gcc_backend();
-        ~Gcc_backend();
+        ~Gcc_backend() override;
 
         // Return the supercontext tree.
         tree* supercx_tree()
@@ -113,37 +113,37 @@ public:
         { return &this->_var_map; }
 
         // Variable.
-        Bvariable* variable(Named_object* obj);
+        Bvariable* variable(Named_object* obj) override;
 
         // Expressions.
 
         // Build an invalid expression tree.
-        Bexpression* invalid_expression()
+        Bexpression* invalid_expression() override
         { return new Bexpression(error_mark_node); }
 
         // Build a unary expression tree.
         Bexpression* unary_expression
-        (RIN_OPERATOR op, Bexpression* expr, Location loc);
+        (RIN_OPERATOR op, Bexpression* expr, const Location& loc) override;
 
         // Build a binary expression tree.
         Bexpression* binary_expression
-        (RIN_OPERATOR op, Bexpression* left, Bexpression* right, Location loc);
+        (RIN_OPERATOR op, Bexpression* left, Bexpression* right, const Location& loc) override;
 
         // Build a variable reference tree.
-        Bexpression* var_reference(Bvariable* var, Location loc);
+        Bexpression* var_reference(Bvariable* var, const Location& loc) override;
 
         // Build a float expression tree.
-        Bexpression* float_expression(const mpfr_t* val, Location loc);
+        Bexpression* float_expression(const mpfr_t* val, const Location& loc) override;
 
         // Build an integer expression tree.
-        Bexpression* integer_expression(const mpfr_t* val, Location loc);
+        Bexpression* integer_expression(const mpfr_t* val, const Location& loc) override;
 
         /*
          * A conditional expression usually wraps a binary
          * expression, so its underlying Bexpression can
          * just be returned.
          */
-        Bexpression* conditional_expression(Bexpression* cond, Location loc)
+        Bexpression* conditional_expression(Bexpression* cond, const Location& loc) override
         { return cond; }
 
         // Statements.
@@ -152,53 +152,53 @@ public:
         inline tree unfold_scope(Scope* scope);
 
         // Create an invalid statement tree.
-        Bstatement* invalid_statement()
+        Bstatement* invalid_statement() override
         { return new Bstatement(error_mark_node); }
 
         // Create a variable declaration statement tree.
-        Bstatement* var_dec_statement(Bvariable* var);
+        Bstatement* var_dec_statement(Bvariable* var) override;
 
         // Create an assignment statement tree.
         Bstatement* assignment_statement
-        (Bexpression* lhs, Bexpression* rhs, Location loc);
+        (Bexpression* lhs, Bexpression* rhs, const Location& loc) override;
 
         // Create increment/decrement statement trees.
-        Bstatement* inc_statement(Bexpression* unary, Location loc);
-        Bstatement* dec_statement(Bexpression* unary, Location loc);
+        Bstatement* inc_statement(Bexpression* unary, const Location& loc) override;
+        Bstatement* dec_statement(Bexpression* unary, const Location& loc) override;
 
         // Create an if statement tree with optional else block.
         Bstatement* if_statement
-        (Bexpression* cond, Scope* then, Scope* else_block, Location loc);
+        (Bexpression* cond, Scope* then, Scope* else_block, const Location& loc) override;
 
         // Create a for statement tree.
         Bstatement* for_statement
         (Bstatement* ind, Bstatement* cond, Bstatement* inc,
-         Scope* then_block, Location loc);
+         Scope* then_block, const Location& loc) override;
 
         // Create an expression statement tree.
-        Bstatement* expression_statement(Bexpression* expr, Location loc);
+        Bstatement* expression_statement(Bexpression* expr, const Location& loc) override;
 
         // Create a compound statement tree.
-        Bstatement* compound_statement(Bstatement* first, Bstatement* second, Location loc);
+        Bstatement* compound_statement(Bstatement* first, Bstatement* second, const Location& loc) override;
 
         // Create a return statement tree.
-        Bstatement* return_statement(Bexpression* expr, Location loc);
+        Bstatement* return_statement(Bexpression* expr, const Location& loc) override;
 
         // Create a function declaration statement tree (stub).
         Bstatement* function_statement
         (const std::string& name, const std::vector<std::string>& params,
-         Scope* body, Location loc);
+         Scope* body, const Location& loc) override;
 
         // Create a function call expression tree (stub).
         Bexpression* call_expression
         (const std::string& name, const std::vector<Bexpression*>& args,
-         Location loc);
+         const Location& loc) override;
 
         // Create a break statement (placeholder).
-        Bstatement* break_statement(Location loc);
+        Bstatement* break_statement(const Location& loc) override;
 
         // Create a continue statement (placeholder).
-        Bstatement* continue_statement(Location loc);
+        Bstatement* continue_statement(const Location& loc) override;
 
 private:
 
@@ -215,7 +215,7 @@ private:
 // gcc-backend.cc
 
 // Converts a frontend location to location_t.
-extern location_t gcc_location(const Location loc);
+extern location_t gcc_location(const Location& loc);
 
 // Returns/deletes the backend instance.
 extern Gcc_backend* rin_get_backend();

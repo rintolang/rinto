@@ -23,13 +23,14 @@
 #endif // WIN32
 
 // debug-diagnostics.cc
-extern void do_recoverable_abort();
+extern void do_recoverable_abort() __attribute__((noreturn));
 
 #define BE_UNREACHABLE()                                                    \
 {                                                                           \
         fprintf(stderr, "[DEBUG FATAL] Received UNREACHABLE signal\n");     \
         fflush(stderr);                                                     \
         do_recoverable_abort();                                             \
+        __builtin_unreachable();                                            \
 }
 
 #define BE_ASSERT(EXPR)                                                     \
@@ -38,6 +39,7 @@ extern void do_recoverable_abort();
                 fprintf(stderr, "[DEBUG FATAL]: ASSERTION FAILURE\n");      \
                 fflush(stderr);                                             \
                 do_recoverable_abort();                                     \
+                __builtin_unreachable();                                    \
         }                                                                   \
 }
 
