@@ -4,6 +4,7 @@
 #include <diagnostic.hpp>
 #include <fstream>
 #include <cstdlib>
+#include <csignal>
 
 class Bexpression {};
 class Bstatement  {};
@@ -37,8 +38,8 @@ static void cleanup() {
 	printf("  [%02d] %-50s ", tests_run, name); \
 	fflush(stdout);
 
-#define PASS() do { tests_passed++; printf("PASS\n"); return; } while(0)
-#define FAIL(msg) do { tests_failed++; printf("FAIL: %s\n", msg); return; } while(0)
+#define PASS() do { tests_passed++; printf("PASS\n"); fflush(stdout); return; } while(0)
+#define FAIL(msg) do { tests_failed++; printf("FAIL: %s\n", msg); fflush(stdout); return; } while(0)
 #define EXPECT_CLS(tok, cls) \
 	if ((tok).classification() != Token::cls) FAIL("expected " #cls)
 #define EXPECT_OP(tok, op_val) \
@@ -686,7 +687,15 @@ static void test_classification_as_string() {
 
 typedef void (*TestFn)();
 
+static void signal_handler(int sig) {
+	fprintf(stderr, "\n[FATAL] Signal %d received after test %d\n", sig, tests_run);
+	fflush(stderr);
+	exit(128 + sig);
+}
+
 int main() {
+	signal(SIGABRT, signal_handler);
+	signal(SIGSEGV, signal_handler);
 	atexit(cleanup);
 	printf("\n ---- TEST: SCANNER ---- \n\n");
 
