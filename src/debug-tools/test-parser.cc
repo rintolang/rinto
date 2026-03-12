@@ -1,4 +1,4 @@
-// test-parser.cc - Unit tests for the Rinto parser
+// test-parser.cc - Comprehensive unit tests for the Rinto parser
 #include <backend.hpp>
 #include <parser.hpp>
 #include <fstream>
@@ -6,7 +6,6 @@
 class Bexpression {};
 class Bstatement  {};
 
-// Implements a backend variable for testing.
 class Bvariable
 {
 public:
@@ -30,157 +29,54 @@ private:
 	Location    _location   = File::unknown_location();
 };
 
-// Required by backend.hpp
 void delete_stmt(Bstatement* stmt)
 { delete stmt; }
 
 /*
- * A mock backend that silently handles all operations.
- * No output is produced; tests only verify parse succeeds/fails.
+ * Silent mock backend. Tracks whether errors occurred
+ * via invalid_expression() / invalid_statement() calls.
  */
 class Test_backend : public Backend
 {
 public:
 	Test_backend() : _had_error(false) {}
+	bool had_error() const { return _had_error; }
+	void reset_error() { _had_error = false; }
 
-	bool had_error() const
-	{ return _had_error; }
-
-	void reset_error()
-	{ _had_error = false; }
-
-	// Variable.
 	Bvariable* variable(Named_object* obj) {
 		Bvariable* var = new Bvariable;
-		if (obj != NULL) {
-			var->set_identifier(obj->identifier());
-			var->set_location(obj->location());
-		}
+		if (obj) { var->set_identifier(obj->identifier()); var->set_location(obj->location()); }
 		return var;
 	}
 
-	// Expressions.
+	Bexpression* invalid_expression()    { _had_error = true; return new Bexpression; }
+	Bstatement*  invalid_statement()     { _had_error = true; return new Bstatement; }
 
-	Bexpression* invalid_expression() {
-		_had_error = true;
+	Bexpression* var_reference(Bvariable* v, Location)             { delete v; return new Bexpression; }
+	Bexpression* conditional_expression(Bexpression* c, Location)  { delete c; return new Bexpression; }
+	Bexpression* unary_expression(RIN_OPERATOR, Bexpression* e, Location) { delete e; return new Bexpression; }
+	Bexpression* float_expression(const mpfr_t*, Location)         { return new Bexpression; }
+	Bexpression* integer_expression(const mpfr_t*, Location)       { return new Bexpression; }
+	Bexpression* binary_expression(RIN_OPERATOR, Bexpression* l, Bexpression* r, Location) { delete l; delete r; return new Bexpression; }
+	Bexpression* call_expression(const std::string&, const std::vector<Bexpression*>& a, Location) {
+		for (auto i = a.begin(); i != a.end(); ++i) delete *i;
 		return new Bexpression;
 	}
 
-	Bexpression* var_reference(Bvariable* var, Location loc) {
-		delete var;
-		return new Bexpression;
-	}
+	Bstatement* var_dec_statement(Bvariable* v)              { delete v; return new Bstatement; }
+	Bstatement* inc_statement(Bexpression* e, Location)      { delete e; return new Bstatement; }
+	Bstatement* dec_statement(Bexpression* e, Location)      { delete e; return new Bstatement; }
+	Bstatement* expression_statement(Bexpression* e, Location) { delete e; return new Bstatement; }
+	Bstatement* compound_statement(Bstatement* a, Bstatement* b, Location) { delete a; delete b; return new Bstatement; }
+	Bstatement* assignment_statement(Bexpression* l, Bexpression* r, Location) { delete l; delete r; return new Bstatement; }
+	Bstatement* return_statement(Bexpression* e, Location)   { delete e; return new Bstatement; }
+	Bstatement* break_statement(Location)    { return new Bstatement; }
+	Bstatement* continue_statement(Location) { return new Bstatement; }
 
-	Bexpression* conditional_expression(Bexpression* cond, Location loc) {
-		delete cond;
-		return new Bexpression;
-	}
-
-	Bexpression* unary_expression
-	(RIN_OPERATOR op, Bexpression* expr, Location loc) {
-		delete expr;
-		return new Bexpression;
-	}
-
-	Bexpression* float_expression(const mpfr_t* val, Location loc) {
-		return new Bexpression;
-	}
-
-	Bexpression* integer_expression(const mpfr_t* val, Location loc) {
-		return new Bexpression;
-	}
-
-	Bexpression* binary_expression
-	(RIN_OPERATOR op, Bexpression* left, Bexpression* right, Location loc) {
-		delete left;
-		delete right;
-		return new Bexpression;
-	}
-
-	// Statements.
-
-	Bstatement* invalid_statement() {
-		_had_error = true;
-		return new Bstatement;
-	}
-
-	Bstatement* var_dec_statement(Bvariable* var) {
-		delete var;
-		return new Bstatement;
-	}
-
-	Bstatement* inc_statement(Bexpression* var, Location loc) {
-		delete var;
-		return new Bstatement;
-	}
-
-	Bstatement* dec_statement(Bexpression* var, Location loc) {
-		delete var;
-		return new Bstatement;
-	}
-
-	Bstatement* expression_statement(Bexpression* expr, Location loc) {
-		delete expr;
-		return new Bstatement;
-	}
-
-	Bstatement* compound_statement
-	(Bstatement* first, Bstatement* second, Location loc) {
-		delete first;
-		delete second;
-		return new Bstatement;
-	}
-
-	Bstatement* if_statement
-	(Bexpression* expr, Scope* scope, Scope* else_block, Location loc) {
-		delete expr;
-		// Scopes owned by If_statement; do not delete here.
-		return new Bstatement;
-	}
-
-	Bstatement* assignment_statement
-	(Bexpression* lhs, Bexpression* rhs, Location loc) {
-		delete lhs;
-		delete rhs;
-		return new Bstatement;
-	}
-
-	Bstatement* for_statement
-	(Bstatement* ind, Bstatement* cond, Bstatement* inc, Scope* then, Location loc) {
-		delete ind;
-		delete cond;
-		delete inc;
-		// Scope owned by For_statement; do not delete here.
-		return new Bstatement;
-	}
-
-	Bstatement* return_statement(Bexpression* expr, Location loc) {
-		delete expr;
-		return new Bstatement;
-	}
-
-	Bstatement* function_statement
-	(const std::string& name, const std::vector<std::string>& params,
-	 Scope* body, Location loc) {
-		// Scope owned by Function_declaration_statement; do not delete here.
-		return new Bstatement;
-	}
-
-	Bexpression* call_expression
-	(const std::string& name, const std::vector<Bexpression*>& args,
-	 Location loc) {
-		for (auto itr = args.begin(); itr != args.end(); ++itr)
-			delete *itr;
-		return new Bexpression;
-	}
-
-	Bstatement* break_statement(Location loc) {
-		return new Bstatement;
-	}
-
-	Bstatement* continue_statement(Location loc) {
-		return new Bstatement;
-	}
+	// Scopes are owned by their statements; do NOT delete here.
+	Bstatement* if_statement(Bexpression* e, Scope*, Scope*, Location) { delete e; return new Bstatement; }
+	Bstatement* for_statement(Bstatement* a, Bstatement* b, Bstatement* c, Scope*, Location) { delete a; delete b; delete c; return new Bstatement; }
+	Bstatement* function_statement(const std::string&, const std::vector<std::string>&, Scope*, Location) { return new Bstatement; }
 
 private:
 	bool _had_error;
@@ -188,92 +84,505 @@ private:
 
 static int tests_run = 0;
 static int tests_passed = 0;
+static int tests_failed = 0;
+static const char* TEMP_FILE = "rin_test_parser_tmp.rin";
 
-static std::string write_temp_file(const std::string& content) {
-	std::string path = "rin_test_parser_tmp.rin";
-	std::ofstream out(path);
+static std::string write_temp(const std::string& content) {
+	std::ofstream out(TEMP_FILE, std::ios::trunc | std::ios::binary);
 	out << content;
+	out.flush();
 	out.close();
-	return path;
+	return std::string(TEMP_FILE);
 }
+static void cleanup() { std::remove(TEMP_FILE); }
 
-static void remove_temp_file() {
-	std::remove("rin_test_parser_tmp.rin");
-}
+#define BEGIN_TEST(name) \
+	tests_run++; \
+	printf("  [%02d] %-55s ", tests_run, name); \
+	fflush(stdout);
 
-// Test: "float x" -> parses without error
-static bool test_var_declaration() {
-	std::string path = write_temp_file("float x\n");
+#define PASS() do { tests_passed++; printf("PASS\n"); return; } while(0)
+#define FAIL(msg) do { tests_failed++; printf("FAIL: %s\n", msg); return; } while(0)
+
+/* Helper: parse content and return whether errors occurred */
+static bool parses_ok(const std::string& content) {
+	std::string path = write_temp(content);
 	Test_backend* be = new Test_backend;
 	Parser parser(path, be);
 	parser.parse();
-	return true;
+	return !be->had_error();
 }
 
-// Test: "float x = 3.14f" -> parses without error
-static bool test_var_with_init() {
-	std::string path = write_temp_file("float x = 3.14f\n");
-	Test_backend* be = new Test_backend;
-	Parser parser(path, be);
-	parser.parse();
-	return true;
+// ==== VARIABLE DECLARATION TESTS ====
+
+static void test_float_decl() {
+	BEGIN_TEST("float x");
+	if (!parses_ok("float x\n")) FAIL("parse error");
+	PASS();
 }
 
-// Test: "if x > 0 {}" with x defined -> parses without error
-static bool test_if_statement() {
-	std::string path = write_temp_file("float x = 1.0f\nif x > 0.0f {\n}\n");
-	Test_backend* be = new Test_backend;
-	Parser parser(path, be);
-	parser.parse();
-	return true;
+static void test_float_decl_with_init() {
+	BEGIN_TEST("float x = 3.14f");
+	if (!parses_ok("float x = 3.14f\n")) FAIL("parse error");
+	PASS();
 }
 
-// Test: "int y = 42" -> parses without error
-static bool test_int_declaration() {
-	std::string path = write_temp_file("int y = 42\n");
-	Test_backend* be = new Test_backend;
-	Parser parser(path, be);
-	parser.parse();
-	return true;
+static void test_float_decl_with_expr() {
+	BEGIN_TEST("float x = 1.0f + 2.0f");
+	if (!parses_ok("float x = 1.0f + 2.0f\n")) FAIL("parse error");
+	PASS();
 }
 
-typedef bool (*TestFn)();
-
-struct TestCase {
-	const char* name;
-	TestFn fn;
-};
-
-static void run_test(const TestCase& tc) {
-	tests_run++;
-	printf("  [%d] %s ... ", tests_run, tc.name);
-	bool result = tc.fn();
-	if (result) {
-		tests_passed++;
-		printf("PASS\n");
-	} else {
-		printf("FAIL\n");
-	}
+static void test_int_decl() {
+	BEGIN_TEST("int y");
+	if (!parses_ok("int y\n")) FAIL("parse error");
+	PASS();
 }
+
+static void test_int_decl_with_init() {
+	BEGIN_TEST("int y = 42");
+	if (!parses_ok("int y = 42\n")) FAIL("parse error");
+	PASS();
+}
+
+static void test_var_decl() {
+	BEGIN_TEST("var z = 1.0f");
+	if (!parses_ok("var z = 1.0f\n")) FAIL("parse error");
+	PASS();
+}
+
+static void test_multiple_decls() {
+	BEGIN_TEST("Multiple variable declarations");
+	if (!parses_ok("float a = 1.0f\nfloat b = 2.0f\nfloat c = 3.0f\n")) FAIL("parse error");
+	PASS();
+}
+
+// ==== ASSIGNMENT TESTS ====
+
+static void test_simple_assignment() {
+	BEGIN_TEST("x = 5.0f");
+	if (!parses_ok("float x\nx = 5.0f\n")) FAIL("parse error");
+	PASS();
+}
+
+static void test_assignment_with_expr() {
+	BEGIN_TEST("x = a + b");
+	if (!parses_ok("float a = 1.0f\nfloat b = 2.0f\nfloat x\nx = a + b\n")) FAIL("parse error");
+	PASS();
+}
+
+static void test_compound_add_assign() {
+	BEGIN_TEST("x += 1.0f");
+	if (!parses_ok("float x = 0.0f\nx += 1.0f\n")) FAIL("parse error");
+	PASS();
+}
+
+static void test_compound_sub_assign() {
+	BEGIN_TEST("x -= 1.0f");
+	if (!parses_ok("float x = 5.0f\nx -= 1.0f\n")) FAIL("parse error");
+	PASS();
+}
+
+static void test_compound_mul_assign() {
+	BEGIN_TEST("x *= 2.0f");
+	if (!parses_ok("float x = 3.0f\nx *= 2.0f\n")) FAIL("parse error");
+	PASS();
+}
+
+static void test_compound_quo_assign() {
+	BEGIN_TEST("x /= 2.0f");
+	if (!parses_ok("float x = 6.0f\nx /= 2.0f\n")) FAIL("parse error");
+	PASS();
+}
+
+// ==== INCREMENT / DECREMENT TESTS ====
+
+static void test_increment() {
+	BEGIN_TEST("x++");
+	if (!parses_ok("float x = 0.0f\nx++\n")) FAIL("parse error");
+	PASS();
+}
+
+static void test_decrement() {
+	BEGIN_TEST("x--");
+	if (!parses_ok("float x = 5.0f\nx--\n")) FAIL("parse error");
+	PASS();
+}
+
+// ==== EXPRESSION TESTS ====
+
+static void test_binary_add() {
+	BEGIN_TEST("Binary expression: a + b");
+	if (!parses_ok("float a = 1.0f\nfloat b = 2.0f\nfloat c = a + b\n")) FAIL("parse error");
+	PASS();
+}
+
+static void test_binary_chain() {
+	BEGIN_TEST("Chained binary: a + b * c - d");
+	if (!parses_ok("float a = 1.0f\nfloat b = 2.0f\nfloat c = 3.0f\nfloat d = 4.0f\nfloat r = a + b * c - d\n")) FAIL("parse error");
+	PASS();
+}
+
+static void test_parenthesized_expr() {
+	BEGIN_TEST("Parenthesized: (a + b) * c");
+	if (!parses_ok("float a = 1.0f\nfloat b = 2.0f\nfloat c = 3.0f\nfloat r = (a + b) * c\n")) FAIL("parse error");
+	PASS();
+}
+
+static void test_nested_parens() {
+	BEGIN_TEST("Nested parens: ((a + b))");
+	if (!parses_ok("float a = 1.0f\nfloat b = 2.0f\nfloat r = ((a + b))\n")) FAIL("parse error");
+	PASS();
+}
+
+static void test_unary_minus() {
+	BEGIN_TEST("Unary minus: -x");
+	if (!parses_ok("float x = 5.0f\nfloat y = -x\n")) FAIL("parse error");
+	PASS();
+}
+
+static void test_unary_not() {
+	BEGIN_TEST("Unary not: !x");
+	if (!parses_ok("float x = 1.0f\nfloat y = !x\n")) FAIL("parse error");
+	PASS();
+}
+
+static void test_comparison_operators() {
+	BEGIN_TEST("Comparison: <, >, <=, >=, ==, !=");
+	if (!parses_ok(
+		"float a = 1.0f\nfloat b = 2.0f\n"
+		"float r1 = a < b\nfloat r2 = a > b\n"
+		"float r3 = a <= b\nfloat r4 = a >= b\n"
+		"float r5 = a == b\nfloat r6 = a != b\n"
+	)) FAIL("parse error");
+	PASS();
+}
+
+static void test_logical_operators() {
+	BEGIN_TEST("Logical: &&, ||");
+	if (!parses_ok(
+		"float a = 1.0f\nfloat b = 0.0f\n"
+		"float r1 = a && b\nfloat r2 = a || b\n"
+	)) FAIL("parse error");
+	PASS();
+}
+
+static void test_arithmetic_all() {
+	BEGIN_TEST("Arithmetic: +, -, *, /, %%");
+	if (!parses_ok(
+		"float a = 10.0f\nfloat b = 3.0f\n"
+		"float r1 = a + b\nfloat r2 = a - b\n"
+		"float r3 = a * b\nfloat r4 = a / b\n"
+		"float r5 = a % b\n"
+	)) FAIL("parse error");
+	PASS();
+}
+
+// ==== IF / ELSE TESTS ====
+
+static void test_if_simple() {
+	BEGIN_TEST("if x > 0 { ... }");
+	if (!parses_ok("float x = 1.0f\nif x > 0.0f {\nfloat y = x\n}\n")) FAIL("parse error");
+	PASS();
+}
+
+static void test_if_else() {
+	BEGIN_TEST("if ... { } else { }");
+	if (!parses_ok(
+		"float x = 1.0f\n"
+		"if x > 0.0f {\nfloat y = x\n} else {\nfloat y = 0.0f\n}\n"
+	)) FAIL("parse error");
+	PASS();
+}
+
+static void test_if_else_if_else() {
+	BEGIN_TEST("if ... { } else if ... { } else { }");
+	if (!parses_ok(
+		"float x = 5.0f\n"
+		"if x > 10.0f {\nfloat y = 1.0f\n"
+		"} else if x > 0.0f {\nfloat y = 2.0f\n"
+		"} else {\nfloat y = 3.0f\n}\n"
+	)) FAIL("parse error");
+	PASS();
+}
+
+static void test_if_empty_body() {
+	BEGIN_TEST("if x > 0 { } (empty body)");
+	if (!parses_ok("float x = 1.0f\nif x > 0.0f {\n}\n")) FAIL("parse error");
+	PASS();
+}
+
+// ==== FOR LOOP TESTS ====
+
+static void test_for_loop_full() {
+	BEGIN_TEST("for float i = 0; i < 10; i++ { ... }");
+	if (!parses_ok(
+		"for float i = 0.0f; i < 10.0f; i++ {\nfloat x = i\n}\n"
+	)) FAIL("parse error");
+	PASS();
+}
+
+static void test_for_loop_dec() {
+	BEGIN_TEST("for with decrement: i--");
+	if (!parses_ok(
+		"for float i = 10.0f; i > 0.0f; i-- {\nfloat x = i\n}\n"
+	)) FAIL("parse error");
+	PASS();
+}
+
+static void test_for_loop_empty_body() {
+	BEGIN_TEST("for ... { } (empty body)");
+	if (!parses_ok("for float i = 0.0f; i < 10.0f; i++ {\n}\n")) FAIL("parse error");
+	PASS();
+}
+
+// ==== WHILE LOOP TESTS ====
+
+static void test_while_loop() {
+	BEGIN_TEST("while x < 10 { x++ }");
+	if (!parses_ok("float x = 0.0f\nwhile x < 10.0f {\nx++\n}\n")) FAIL("parse error");
+	PASS();
+}
+
+static void test_while_empty_body() {
+	BEGIN_TEST("while true { } (empty body)");
+	if (!parses_ok("float x = 1.0f\nwhile x {\n}\n")) FAIL("parse error");
+	PASS();
+}
+
+// ==== BREAK / CONTINUE TESTS ====
+
+static void test_break_in_loop() {
+	BEGIN_TEST("break inside for loop");
+	if (!parses_ok("for float i = 0.0f; i < 10.0f; i++ {\nbreak\n}\n")) FAIL("parse error");
+	PASS();
+}
+
+static void test_continue_in_loop() {
+	BEGIN_TEST("continue inside while loop");
+	if (!parses_ok("float x = 0.0f\nwhile x < 10.0f {\nx++\ncontinue\n}\n")) FAIL("parse error");
+	PASS();
+}
+
+// ==== FUNCTION TESTS ====
+
+static void test_fn_no_params() {
+	BEGIN_TEST("fn noParams() { ... }");
+	if (!parses_ok("fn noParams() {\nfloat x = 1.0f\n}\n")) FAIL("parse error");
+	PASS();
+}
+
+static void test_fn_one_param() {
+	BEGIN_TEST("fn oneParam(a) { ... }");
+	if (!parses_ok("fn oneParam(a) {\nfloat x = a\n}\n")) FAIL("parse error");
+	PASS();
+}
+
+static void test_fn_two_params() {
+	BEGIN_TEST("fn twoParams(a, b) { ... }");
+	if (!parses_ok("fn twoParams(a, b) {\nfloat x = a + b\n}\n")) FAIL("parse error");
+	PASS();
+}
+
+static void test_fn_with_return() {
+	BEGIN_TEST("fn with return statement");
+	if (!parses_ok("fn add(a, b) {\nreturn a + b\n}\n")) FAIL("parse error");
+	PASS();
+}
+
+static void test_fn_void_return() {
+	BEGIN_TEST("fn with void return");
+	if (!parses_ok("fn doNothing() {\nreturn\n}\n")) FAIL("parse error");
+	PASS();
+}
+
+static void test_fn_call_no_args() {
+	BEGIN_TEST("Function call: foo()");
+	if (!parses_ok("fn foo() {\nfloat x = 1.0f\n}\nfoo()\n")) FAIL("parse error");
+	PASS();
+}
+
+static void test_fn_call_with_args() {
+	BEGIN_TEST("Function call: add(1.0f, 2.0f)");
+	if (!parses_ok("fn add(a, b) {\nreturn a + b\n}\nadd(1.0f, 2.0f)\n")) FAIL("parse error");
+	PASS();
+}
+
+// ==== BRACE PLACEMENT TESTS ====
+
+static void test_brace_next_line_if() {
+	BEGIN_TEST("Brace on next line for if");
+	if (!parses_ok("float x = 1.0f\nif x > 0.0f\n{\nfloat y = x\n}\n")) FAIL("parse error");
+	PASS();
+}
+
+static void test_brace_next_line_for() {
+	BEGIN_TEST("Brace on next line for for-loop");
+	if (!parses_ok("for float i = 0.0f; i < 10.0f; i++\n{\nfloat x = i\n}\n")) FAIL("parse error");
+	PASS();
+}
+
+static void test_brace_next_line_while() {
+	BEGIN_TEST("Brace on next line for while");
+	if (!parses_ok("float x = 0.0f\nwhile x < 10.0f\n{\nx++\n}\n")) FAIL("parse error");
+	PASS();
+}
+
+// ==== NESTED SCOPE TESTS ====
+
+static void test_nested_if_in_for() {
+	BEGIN_TEST("Nested if inside for loop");
+	if (!parses_ok(
+		"for float i = 0.0f; i < 10.0f; i++ {\n"
+		"if i > 5.0f {\nfloat x = i\n}\n"
+		"}\n"
+	)) FAIL("parse error");
+	PASS();
+}
+
+static void test_nested_for_in_while() {
+	BEGIN_TEST("Nested for inside while");
+	if (!parses_ok(
+		"float n = 0.0f\n"
+		"while n < 3.0f {\n"
+		"for float i = 0.0f; i < 5.0f; i++ {\nfloat x = i\n}\n"
+		"n++\n}\n"
+	)) FAIL("parse error");
+	PASS();
+}
+
+// ==== SEMICOLON / EOL TESTS ====
+
+static void test_semicolon_separator() {
+	BEGIN_TEST("Semicolon as statement separator");
+	if (!parses_ok("float x = 1.0f; float y = 2.0f\n")) FAIL("parse error");
+	PASS();
+}
+
+static void test_eol_as_separator() {
+	BEGIN_TEST("EOL as statement separator");
+	if (!parses_ok("float x = 1.0f\nfloat y = 2.0f\n")) FAIL("parse error");
+	PASS();
+}
+
+// ==== CRLF TESTS ====
+
+static void test_crlf_basic() {
+	BEGIN_TEST("CRLF: basic variable declaration");
+	if (!parses_ok("float x = 1.0f\r\n")) FAIL("parse error");
+	PASS();
+}
+
+static void test_crlf_if_else() {
+	BEGIN_TEST("CRLF: if/else block");
+	if (!parses_ok(
+		"float x = 1.0f\r\n"
+		"if x > 0.0f {\r\n"
+		"float y = x\r\n"
+		"} else {\r\n"
+		"float y = 0.0f\r\n"
+		"}\r\n"
+	)) FAIL("parse error");
+	PASS();
+}
+
+static void test_crlf_for_loop() {
+	BEGIN_TEST("CRLF: for loop");
+	if (!parses_ok(
+		"for float i = 0.0f; i < 10.0f; i++ {\r\n"
+		"float x = i\r\n"
+		"}\r\n"
+	)) FAIL("parse error");
+	PASS();
+}
+
+// ==== COMPLEX / INTEGRATION TESTS ====
+
+static void test_complex_program() {
+	BEGIN_TEST("Complex: multi-statement program");
+	if (!parses_ok(
+		"float x = 10.0f\n"
+		"float y = 20.0f\n"
+		"float sum = x + y\n"
+		"if sum > 25.0f {\n"
+		"  float diff = y - x\n"
+		"  diff += 1.0f\n"
+		"}\n"
+		"for float i = 0.0f; i < 5.0f; i++ {\n"
+		"  x += 1.0f\n"
+		"}\n"
+		"while y > 0.0f {\n"
+		"  y -= 1.0f\n"
+		"}\n"
+	)) FAIL("parse error");
+	PASS();
+}
+
+static void test_fn_with_body() {
+	BEGIN_TEST("Complex: function with body statements");
+	if (!parses_ok(
+		"fn compute(a, b) {\n"
+		"  float c = a + b\n"
+		"  c *= 2.0f\n"
+		"  return c\n"
+		"}\n"
+	)) FAIL("parse error");
+	PASS();
+}
+
+// ==== ENTRY POINT ====
+
+typedef void (*TestFn)();
 
 int main() {
 	printf("\n ---- TEST: PARSER ---- \n\n");
 
-	TestCase tests[] = {
-		{ "float x -> parses OK",            test_var_declaration },
-		{ "float x = 3.14f -> parses OK",    test_var_with_init },
-		{ "if x > 0 {} -> parses OK",        test_if_statement },
-		{ "int y = 42 -> parses OK",         test_int_declaration },
+	TestFn tests[] = {
+		// Variable declarations
+		test_float_decl, test_float_decl_with_init, test_float_decl_with_expr,
+		test_int_decl, test_int_decl_with_init, test_var_decl, test_multiple_decls,
+		// Assignments
+		test_simple_assignment, test_assignment_with_expr,
+		test_compound_add_assign, test_compound_sub_assign,
+		test_compound_mul_assign, test_compound_quo_assign,
+		// Increment / decrement
+		test_increment, test_decrement,
+		// Expressions
+		test_binary_add, test_binary_chain, test_parenthesized_expr,
+		test_nested_parens, test_unary_minus, test_unary_not,
+		test_comparison_operators, test_logical_operators, test_arithmetic_all,
+		// If / else
+		test_if_simple, test_if_else, test_if_else_if_else, test_if_empty_body,
+		// For loop
+		test_for_loop_full, test_for_loop_dec, test_for_loop_empty_body,
+		// While loop
+		test_while_loop, test_while_empty_body,
+		// Break / continue
+		test_break_in_loop, test_continue_in_loop,
+		// Functions
+		test_fn_no_params, test_fn_one_param, test_fn_two_params,
+		test_fn_with_return, test_fn_void_return,
+		test_fn_call_no_args, test_fn_call_with_args,
+		// Brace placement
+		test_brace_next_line_if, test_brace_next_line_for, test_brace_next_line_while,
+		// Nested scopes
+		test_nested_if_in_for, test_nested_for_in_while,
+		// Semicolons / EOL
+		test_semicolon_separator, test_eol_as_separator,
+		// CRLF
+		test_crlf_basic, test_crlf_if_else, test_crlf_for_loop,
+		// Complex / integration
+		test_complex_program, test_fn_with_body,
 	};
 
 	int count = sizeof(tests) / sizeof(tests[0]);
 	for (int i = 0; i < count; i++)
-		run_test(tests[i]);
+		tests[i]();
 
-	printf("\n  Results: %d/%d passed\n", tests_passed, tests_run);
-	printf("\n ---- END TEST ----\n\n");
+	printf("\n  Results: %d/%d passed", tests_passed, tests_run);
+	if (tests_failed > 0) printf(" (%d FAILED)", tests_failed);
+	printf("\n\n ---- END TEST ----\n\n");
 
-	remove_temp_file();
-
-	return (tests_passed == tests_run) ? 0 : 1;
+	cleanup();
+	return (tests_failed == 0) ? 0 : 1;
 }

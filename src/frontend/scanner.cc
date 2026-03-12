@@ -328,8 +328,8 @@ Token Scanner::scan_token()
         std::string tokenStr(1, ch);
 
         /* Gather multi-char operator */
-        while (is_operator(tokenStr) || is_operator(tokenStr + (char)src->peek())) {
-                if (is_operator(tokenStr + (char)src->peek())) {
+        while (is_operator(tokenStr) || (src->peek() != -1 && is_operator(tokenStr + (char)src->peek()))) {
+                if (src->peek() != -1 && is_operator(tokenStr + (char)src->peek())) {
                         int ch = src->get_char();
                         if (ch == '/' && (src->peek() == '/' || src->peek() == '*')) {
                                 skip_comment();
