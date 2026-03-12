@@ -39,7 +39,13 @@ static void cleanup() {
 	fflush(stdout);
 
 #define PASS() do { tests_passed++; printf("PASS\n"); fflush(stdout); return; } while(0)
-#define FAIL(msg) do { tests_failed++; printf("FAIL: %s\n", msg); fflush(stdout); return; } while(0)
+#define FAIL(msg) do { \
+	tests_failed++; \
+	printf("FAIL: %s\n", msg); \
+	fprintf(stderr, "[TEST %d FAILED] %s\n", tests_run, msg); \
+	fflush(stdout); fflush(stderr); \
+	return; \
+} while(0)
 #define EXPECT_CLS(tok, cls) \
 	if ((tok).classification() != Token::cls) FAIL("expected " #cls)
 #define EXPECT_OP(tok, op_val) \
