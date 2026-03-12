@@ -203,8 +203,7 @@ public:
                 else
                         rin_inform(loc, "CREATED IF STATEMENT\n");
                 delete expr;
-                delete scope;
-                delete else_block;
+                // Scopes are owned by the If_statement; do not delete here.
 
                 return new Bstatement;
         }
@@ -226,7 +225,7 @@ public:
                 delete ind;
                 delete cond;
                 delete inc;
-                delete then;
+                // Scope owned by For_statement; do not delete here.
 
                 return new Bstatement;
         }
@@ -244,7 +243,7 @@ public:
         {
                 rin_inform(loc, "CREATED FUNCTION DECLARATION: %s\n",
                         &name[0]);
-                delete body;
+                // Scope owned by Function_declaration_statement; do not delete here.
                 return new Bstatement;
         }
 

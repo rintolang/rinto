@@ -134,8 +134,7 @@ public:
 	Bstatement* if_statement
 	(Bexpression* expr, Scope* scope, Scope* else_block, Location loc) {
 		delete expr;
-		delete scope;
-		delete else_block;
+		// Scopes owned by If_statement; do not delete here.
 		return new Bstatement;
 	}
 
@@ -151,7 +150,7 @@ public:
 		delete ind;
 		delete cond;
 		delete inc;
-		delete then;
+		// Scope owned by For_statement; do not delete here.
 		return new Bstatement;
 	}
 
@@ -163,7 +162,7 @@ public:
 	Bstatement* function_statement
 	(const std::string& name, const std::vector<std::string>& params,
 	 Scope* body, Location loc) {
-		delete body;
+		// Scope owned by Function_declaration_statement; do not delete here.
 		return new Bstatement;
 	}
 

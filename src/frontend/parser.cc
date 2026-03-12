@@ -219,6 +219,11 @@ Statement* Parser::parse_if_statement()
 
                 // else if { ... }
                 if (next.classification() == Token::TOKEN_RID && next.rid() == RID_IF) {
+                        /*
+                         * Parse else-if as a nested if-statement inside an
+                         * else scope. Enter scope first so the recursive
+                         * parse_if_statement operates within it.
+                         */
                         Scope* else_scope = this->_backend->enter_scope();
                         Statement* else_if = this->parse_if_statement();
                         if (!else_if->is_invalid())
@@ -631,7 +636,8 @@ Statement* Parser::parse_function_declaration()
 
                         // Expect comma between parameters.
                         Token comma = this->_scanner->next_token();
-                        if (comma.classification() != Token::TOKEN_OPERATOR) {
+                        if (comma.classification() != Token::TOKEN_OPERATOR ||
+                            comma.op() != OPER_COMMA) {
                                 rin_error_at(comma.location(),
                                         "Expected ',' or ')' in parameter list but received %s instead",
                                         comma.str());
@@ -728,9 +734,12 @@ Statement* Parser::parse_call_statement(const std::string& name, Location loc)
                             sep.op() == OPER_RPAREN)
                                 break;
 
-                        // TODO: Comma handling -- currently expressions parse
-                        // until semicolon, so comma must be handled differently
-                        // once a comma operator exists.
+                        // Consume comma separator between arguments.
+                        if (sep.classification() == Token::TOKEN_OPERATOR &&
+                            sep.op() == OPER_COMMA) {
+                                this->_scanner->next_token();
+                                continue;
+                        }
                         break;
                 }
         }
@@ -1110,6 +1119,12 @@ Expression* Parser::parse_expression(RIN_OPERATOR terminal)
 
                 case Token::TOKEN_OPERATOR:
                         if (token.op() == terminal) {
+                                resolves = true;
+                                goto exit_loop;
+                        }
+
+                        // Comma acts as expression separator (e.g. in function calls).
+                        if (token.op() == OPER_COMMA) {
                                 resolves = true;
                                 goto exit_loop;
                         }
