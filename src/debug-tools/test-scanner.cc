@@ -42,7 +42,7 @@ static void cleanup() {
 #define FAIL(msg) do { \
 	tests_failed++; \
 	printf("FAIL: %s\n", msg); \
-	fprintf(stderr, "[TEST %d FAILED] %s\n", tests_run, msg); \
+	fprintf(stderr, "::error::Scanner test %d FAILED: %s\n", tests_run, msg); \
 	fflush(stdout); fflush(stderr); \
 	return; \
 } while(0)
