@@ -530,6 +530,209 @@ static void test_fn_with_body() {
 	PASS();
 }
 
+// ==== EDGE-CASE / REGRESSION TESTS ====
+
+/* Helper: parse content and verify it doesn't crash (returns true always) */
+static bool parses_without_crash(const std::string& content) {
+	std::string path = write_temp(content);
+	Test_backend* be = new Test_backend;
+	Parser parser(path, be);
+	parser.parse();
+	// We don't care about errors, just that it didn't crash/hang
+	return true;
+}
+
+static void test_empty_program() {
+	BEGIN_TEST("Empty program parses OK");
+	if (!parses_without_crash("")) FAIL("crashed");
+	PASS();
+}
+
+static void test_comment_only_program() {
+	BEGIN_TEST("Comment-only program parses OK");
+	if (!parses_without_crash("// hello\n")) FAIL("crashed");
+	PASS();
+}
+
+static void test_undefined_variable_no_crash() {
+	BEGIN_TEST("Undefined variable: no crash");
+	if (!parses_without_crash("x = 5.0f\n")) FAIL("crashed");
+	PASS();
+}
+
+static void test_redefinition_no_crash() {
+	BEGIN_TEST("Redefinition: no crash");
+	if (!parses_without_crash("float x\nfloat x\n")) FAIL("crashed");
+	PASS();
+}
+
+static void test_shadowing_nested_scope_no_crash() {
+	BEGIN_TEST("Variable shadowing in nested scope: no crash");
+	if (!parses_without_crash(
+		"float x = 1.0f\n"
+		"if x > 0.0f {\n"
+		"float x = 2.0f\n"
+		"}\n"
+	)) FAIL("crashed");
+	PASS();
+}
+
+static void test_multiple_functions() {
+	BEGIN_TEST("Multiple function declarations");
+	if (!parses_ok(
+		"fn first() {\n"
+		"float a = 1.0f\n"
+		"}\n"
+		"fn second() {\n"
+		"float b = 2.0f\n"
+		"}\n"
+	)) FAIL("parse error");
+	PASS();
+}
+
+static void test_fn_three_params() {
+	BEGIN_TEST("Function with 3 params");
+	if (!parses_ok(
+		"fn f(a, b, c) {\n"
+		"float x = a + b + c\n"
+		"}\n"
+	)) FAIL("parse error");
+	PASS();
+}
+
+static void test_while_with_break() {
+	BEGIN_TEST("While with break inside");
+	if (!parses_ok(
+		"float x = 0.0f\n"
+		"while x < 10.0f {\n"
+		"break\n"
+		"}\n"
+	)) FAIL("parse error");
+	PASS();
+}
+
+static void test_for_with_continue() {
+	BEGIN_TEST("For with continue inside");
+	if (!parses_ok(
+		"for float i = 0.0f; i < 10.0f; i++ {\n"
+		"continue\n"
+		"}\n"
+	)) FAIL("parse error");
+	PASS();
+}
+
+static void test_deeply_nested_blocks() {
+	BEGIN_TEST("Deeply nested: if in for in while");
+	if (!parses_ok(
+		"float x = 0.0f\n"
+		"while x < 10.0f {\n"
+		"for float i = 0.0f; i < 5.0f; i++ {\n"
+		"if i > 2.0f {\n"
+		"float y = i\n"
+		"}\n"
+		"}\n"
+		"x++\n"
+		"}\n"
+	)) FAIL("parse error");
+	PASS();
+}
+
+static void test_integer_literal_in_assign() {
+	BEGIN_TEST("Integer literal in assignment: float x = 42");
+	if (!parses_ok("float x = 42\n")) FAIL("parse error");
+	PASS();
+}
+
+static void test_var_reference_in_assign() {
+	BEGIN_TEST("Variable reference: float b = a");
+	if (!parses_ok("float a = 1.0f\nfloat b = a\n")) FAIL("parse error");
+	PASS();
+}
+
+static void test_negative_literal_in_assign() {
+	BEGIN_TEST("Negative literal: float x = -1.0f");
+	if (!parses_ok("float x = -1.0f\n")) FAIL("parse error");
+	PASS();
+}
+
+static void test_multiple_else_if_chains() {
+	BEGIN_TEST("Multiple else-if chains");
+	if (!parses_ok(
+		"float x = 5.0f\n"
+		"if x > 10.0f {\n"
+		"float y = 1.0f\n"
+		"} else if x > 5.0f {\n"
+		"float y = 2.0f\n"
+		"} else if x > 0.0f {\n"
+		"float y = 3.0f\n"
+		"} else {\n"
+		"float y = 4.0f\n"
+		"}\n"
+	)) FAIL("parse error");
+	PASS();
+}
+
+static void test_mixed_int_and_float() {
+	BEGIN_TEST("Mixed int and float declarations");
+	if (!parses_ok("int a = 1\nfloat b = 2.0f\n")) FAIL("parse error");
+	PASS();
+}
+
+static void test_semicolons_multiple_on_line() {
+	BEGIN_TEST("Semicolon-separated: float a; float b; float c");
+	if (!parses_ok("float a; float b; float c\n")) FAIL("parse error");
+	PASS();
+}
+
+static void test_crlf_with_functions() {
+	BEGIN_TEST("CRLF: function declaration");
+	if (!parses_ok(
+		"fn myFunc(a) {\r\n"
+		"float x = a\r\n"
+		"return x\r\n"
+		"}\r\n"
+	)) FAIL("parse error");
+	PASS();
+}
+
+static void test_crlf_with_else_if() {
+	BEGIN_TEST("CRLF: full if/else-if/else");
+	if (!parses_ok(
+		"float x = 5.0f\r\n"
+		"if x > 10.0f {\r\n"
+		"float y = 1.0f\r\n"
+		"} else if x > 0.0f {\r\n"
+		"float y = 2.0f\r\n"
+		"} else {\r\n"
+		"float y = 3.0f\r\n"
+		"}\r\n"
+	)) FAIL("parse error");
+	PASS();
+}
+
+static void test_nested_function_scopes() {
+	BEGIN_TEST("Function with if inside");
+	if (!parses_ok(
+		"fn check(val) {\n"
+		"if val > 0.0f {\n"
+		"return val\n"
+		"}\n"
+		"return 0.0f\n"
+		"}\n"
+	)) FAIL("parse error");
+	PASS();
+}
+
+static void test_expression_many_operators() {
+	BEGIN_TEST("Expression with many operators: a+b-c*d/e");
+	if (!parses_ok(
+		"float a = 1.0f\nfloat b = 2.0f\nfloat c = 3.0f\n"
+		"float d = 4.0f\nfloat e = 5.0f\n"
+		"float r = a + b - c * d / e\n"
+	)) FAIL("parse error");
+	PASS();
+}
+
 // ==== ENTRY POINT ====
 
 typedef void (*TestFn)();
@@ -573,6 +776,18 @@ int main() {
 		test_crlf_basic, test_crlf_if_else, test_crlf_for_loop,
 		// Complex / integration
 		test_complex_program, test_fn_with_body,
+		// Edge-case / regression tests
+		test_empty_program, test_comment_only_program,
+		test_undefined_variable_no_crash, test_redefinition_no_crash,
+		test_shadowing_nested_scope_no_crash,
+		test_multiple_functions, test_fn_three_params,
+		test_while_with_break, test_for_with_continue,
+		test_deeply_nested_blocks,
+		test_integer_literal_in_assign, test_var_reference_in_assign,
+		test_negative_literal_in_assign, test_multiple_else_if_chains,
+		test_mixed_int_and_float, test_semicolons_multiple_on_line,
+		test_crlf_with_functions, test_crlf_with_else_if,
+		test_nested_function_scopes, test_expression_many_operators,
 	};
 
 	int count = sizeof(tests) / sizeof(tests[0]);

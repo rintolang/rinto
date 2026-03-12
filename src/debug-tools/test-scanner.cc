@@ -490,6 +490,197 @@ static void test_is_semicolon() {
 	PASS();
 }
 
+// ---- EDGE-CASE / REGRESSION TESTS ----
+
+static void test_empty_file() {
+	BEGIN_TEST("Empty file -> EOF");
+	Scanner sc(write_temp(""));
+	Token t = sc.next_token();
+	EXPECT_CLS(t, TOKEN_EOF);
+	PASS();
+}
+
+static void test_whitespace_only() {
+	BEGIN_TEST("Whitespace only -> EOF");
+	Scanner sc(write_temp("   \t  "));
+	Token t = sc.next_token();
+	EXPECT_CLS(t, TOKEN_EOF);
+	PASS();
+}
+
+static void test_comment_only() {
+	BEGIN_TEST("Comment only -> EOF");
+	Scanner sc(write_temp("// just a comment\n"));
+	Token t = sc.next_token();
+	// Skip any EOL tokens
+	while (t.classification() == Token::TOKEN_EOL)
+		t = sc.next_token();
+	EXPECT_CLS(t, TOKEN_EOF);
+	PASS();
+}
+
+static void test_multiple_blank_lines() {
+	BEGIN_TEST("Multiple blank lines then ident");
+	Scanner sc(write_temp("\n\n\n x"));
+	Token t = sc.next_token();
+	// Skip EOL tokens
+	while (t.classification() == Token::TOKEN_EOL)
+		t = sc.next_token();
+	EXPECT_CLS(t, TOKEN_IDENT);
+	if (t.string() != "x") FAIL("expected x");
+	PASS();
+}
+
+static void test_operator_at_eof() {
+	BEGIN_TEST("Operator at EOF: x +");
+	Scanner sc(write_temp("x +"));
+	Token t1 = sc.next_token();
+	EXPECT_CLS(t1, TOKEN_IDENT);
+	Token t2 = sc.next_token();
+	EXPECT_OP(t2, OPER_ADD);
+	Token t3 = sc.next_token();
+	EXPECT_CLS(t3, TOKEN_EOF);
+	PASS();
+}
+
+static void test_keyword_prefix_ifx() {
+	BEGIN_TEST("Keyword prefix: ifx -> IDENT");
+	Scanner sc(write_temp("ifx"));
+	Token t = sc.next_token();
+	EXPECT_CLS(t, TOKEN_IDENT);
+	if (t.string() != "ifx") FAIL("expected ifx");
+	PASS();
+}
+
+static void test_keyword_prefix_floating() {
+	BEGIN_TEST("Keyword prefix: floating -> IDENT");
+	Scanner sc(write_temp("floating"));
+	Token t = sc.next_token();
+	EXPECT_CLS(t, TOKEN_IDENT);
+	if (t.string() != "floating") FAIL("expected floating");
+	PASS();
+}
+
+static void test_keyword_prefix_format() {
+	BEGIN_TEST("Keyword prefix: format -> IDENT");
+	Scanner sc(write_temp("format"));
+	Token t = sc.next_token();
+	EXPECT_CLS(t, TOKEN_IDENT);
+	if (t.string() != "format") FAIL("expected format");
+	PASS();
+}
+
+static void test_underscore_identifier() {
+	BEGIN_TEST("Underscore ident: _test -> INVALID (no _ start)");
+	Scanner sc(write_temp("_test"));
+	Token t = sc.next_token();
+	// Regex requires first char to be [a-zA-Z], so _test is invalid
+	EXPECT_CLS(t, TOKEN_INVALID);
+	PASS();
+}
+
+static void test_multiple_operators_sequence() {
+	BEGIN_TEST("Multiple operators: +-*/ x");
+	Scanner sc(write_temp("+-*/ x"));
+	Token t1 = sc.next_token(); EXPECT_OP(t1, OPER_ADD);
+	Token t2 = sc.next_token(); EXPECT_OP(t2, OPER_SUB);
+	Token t3 = sc.next_token(); EXPECT_OP(t3, OPER_MUL);
+	Token t4 = sc.next_token(); EXPECT_OP(t4, OPER_QUO);
+	Token t5 = sc.next_token(); EXPECT_CLS(t5, TOKEN_IDENT);
+	PASS();
+}
+
+static void test_adjacent_operators_no_space() {
+	BEGIN_TEST("Adjacent without space: x+y");
+	Scanner sc(write_temp("x+y"));
+	Token t1 = sc.next_token(); EXPECT_CLS(t1, TOKEN_IDENT);
+	if (t1.string() != "x") FAIL("expected x");
+	Token t2 = sc.next_token(); EXPECT_OP(t2, OPER_ADD);
+	Token t3 = sc.next_token(); EXPECT_CLS(t3, TOKEN_IDENT);
+	if (t3.string() != "y") FAIL("expected y");
+	PASS();
+}
+
+static void test_nested_comment() {
+	BEGIN_TEST("Nested comment: /* outer /* inner */ */");
+	// C-style: the first */ closes the comment, then */ is unexpected
+	// After first */, we should be able to get tokens before the second */
+	Scanner sc(write_temp("/* outer /* inner */ x"));
+	Token t = sc.next_token();
+	// Skip any whitespace/eol
+	while (t.classification() == Token::TOKEN_EOL)
+		t = sc.next_token();
+	// After the first */ closes, we should get 'x' as IDENT
+	EXPECT_CLS(t, TOKEN_IDENT);
+	if (t.string() != "x") FAIL("expected x after comment close");
+	PASS();
+}
+
+static void test_integer_dot_method() {
+	BEGIN_TEST("Integer then dot: 42.method -> FLOAT-ish token");
+	// 42.method will be partially consumed; just verify no crash
+	Scanner sc(write_temp("42.5f x"));
+	Token t = sc.next_token();
+	EXPECT_CLS(t, TOKEN_FLOAT);
+	Token t2 = sc.next_token();
+	EXPECT_CLS(t2, TOKEN_IDENT);
+	PASS();
+}
+
+static void test_consume_errors_unmatched_paren() {
+	BEGIN_TEST("consume_errors for unmatched paren");
+	Scanner sc(write_temp("(x"));
+	Token t1 = sc.next_token(); // (
+	EXPECT_OP(t1, OPER_LPAREN);
+	Token t2 = sc.next_token(); // x
+	EXPECT_CLS(t2, TOKEN_IDENT);
+	bool had_errors = sc.consume_errors();
+	if (!had_errors) FAIL("expected unmatched paren error");
+	PASS();
+}
+
+static void test_multiple_peek_same_token() {
+	BEGIN_TEST("Multiple peek calls return same token");
+	Scanner sc(write_temp("abc def"));
+	Token p1 = sc.peek_token();
+	Token p2 = sc.peek_token();
+	Token p3 = sc.peek_token();
+	if (p1.string() != p2.string()) FAIL("peek 1 and 2 differ");
+	if (p2.string() != p3.string()) FAIL("peek 2 and 3 differ");
+	if (p1.classification() != p2.classification()) FAIL("cls mismatch");
+	PASS();
+}
+
+static void test_has_next_after_eof() {
+	BEGIN_TEST("has_next returns false after EOF");
+	Scanner sc(write_temp("x"));
+	sc.next_token(); // x
+	sc.next_token(); // EOF
+	if (sc.has_next()) FAIL("has_next should be false after EOF");
+	PASS();
+}
+
+static void test_classification_as_string() {
+	BEGIN_TEST("classification_as_string for various types");
+	Scanner sc1(write_temp("42"));
+	Token t1 = sc1.next_token();
+	if (t1.classification_as_string() != "integer literal") FAIL("int cls string");
+
+	Scanner sc2(write_temp("3.14f"));
+	Token t2 = sc2.next_token();
+	if (t2.classification_as_string() != "float literal") FAIL("float cls string");
+
+	Scanner sc3(write_temp("myVar"));
+	Token t3 = sc3.next_token();
+	if (t3.classification_as_string() != "identifier") FAIL("ident cls string");
+
+	Scanner sc4(write_temp(""));
+	Token t4 = sc4.next_token();
+	if (t4.classification_as_string() != "EOF") FAIL("eof cls string");
+
+	PASS();
+}
+
 // ---- ENTRY POINT ----
 
 typedef void (*TestFn)();
@@ -534,6 +725,15 @@ int main() {
 		// Multi-token sequences
 		test_full_var_decl_tokens, test_expression_tokens, test_function_decl_tokens,
 		test_is_semicolon,
+		// Edge-case / regression tests
+		test_empty_file, test_whitespace_only, test_comment_only,
+		test_multiple_blank_lines, test_operator_at_eof,
+		test_keyword_prefix_ifx, test_keyword_prefix_floating, test_keyword_prefix_format,
+		test_underscore_identifier,
+		test_multiple_operators_sequence, test_adjacent_operators_no_space,
+		test_nested_comment, test_integer_dot_method,
+		test_consume_errors_unmatched_paren, test_multiple_peek_same_token,
+		test_has_next_after_eof, test_classification_as_string,
 	};
 
 	int count = sizeof(tests) / sizeof(tests[0]);
