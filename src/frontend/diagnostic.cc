@@ -33,6 +33,23 @@
 #include "diagnostic.hpp"
 
 /*
+ * Portable vasprintf fallback for systems that lack it (e.g. MinGW).
+ */
+#ifndef _GNU_SOURCE
+static int vasprintf(char** strp, const char* fmt, va_list ap)
+{
+        va_list ap_copy;
+        va_copy(ap_copy, ap);
+        int len = vsnprintf(NULL, 0, fmt, ap_copy);
+        va_end(ap_copy);
+        if (len < 0) return -1;
+        *strp = (char*)malloc(len + 1);
+        if (!*strp) return -1;
+        return vsnprintf(*strp, len + 1, fmt, ap);
+}
+#endif
+
+/*
  * Rewrite a format string to expand any extensions not
  * supported by sprintf(). See comments in diagnostics.hpp
  * for list of supported format specifiers.

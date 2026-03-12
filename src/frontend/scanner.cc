@@ -195,6 +195,8 @@ std::string Token::classification_as_string() const
                 return "integer literal";
         case TOKEN_FLOAT:
                 return "float literal";
+        default:
+                return "unknown token";
         }
 }
 
@@ -309,6 +311,10 @@ Token Scanner::scan_token()
 
         if (ch == -1)
                 return this->make_eof_token();
+
+        // Skip carriage return (handle CRLF line endings).
+        if (ch == '\r')
+                return scan_token();
 
         if (ch == '\n') {
                 line_count++;

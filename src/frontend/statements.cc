@@ -63,12 +63,13 @@ Bstatement* Assignment_statement::do_get_backend(Backend* backend)
         Expression* lhs = this->lhs();
         RIN_ASSERT(lhs->classification() == Expression::EXPRESSION_VAR_REFERENCE);
 
-        // Right-hand side can be float, binary, unary, or var reference.
+        // Right-hand side can be float, integer, binary, unary, or var reference.
         Expression* rhs = this->rhs();
         Expression::Expression_classification rhs_c = rhs->classification();
-        RIN_ASSERT(rhs_c == Expression::EXPRESSION_FLOAT  ||
-                   rhs_c == Expression::EXPRESSION_BINARY ||
-                   rhs_c == Expression::EXPRESSION_UNARY  ||
+        RIN_ASSERT(rhs_c == Expression::EXPRESSION_FLOAT   ||
+                   rhs_c == Expression::EXPRESSION_INTEGER  ||
+                   rhs_c == Expression::EXPRESSION_BINARY   ||
+                   rhs_c == Expression::EXPRESSION_UNARY    ||
                    rhs_c == Expression::EXPRESSION_VAR_REFERENCE);
 
         /*
