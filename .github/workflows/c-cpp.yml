@@ -35,20 +35,30 @@ jobs:
     - name: Run scanner unit tests
       run: |
           set +e
-          ./build/test-scanner.out
-          rc=$?
+          ./build/test-scanner.out 2>&1 | tee /tmp/scanner-results.txt
+          rc=${PIPESTATUS[0]}
+          echo "### Scanner Test Results" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat /tmp/scanner-results.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
           if [ $rc -ne 0 ]; then
             echo "::error::Scanner tests failed with exit code $rc"
+            grep FAIL /tmp/scanner-results.txt >> $GITHUB_STEP_SUMMARY || true
             exit $rc
           fi
 
     - name: Run parser unit tests
       run: |
           set +e
-          ./build/test-parser.out
-          rc=$?
+          ./build/test-parser.out 2>&1 | tee /tmp/parser-results.txt
+          rc=${PIPESTATUS[0]}
+          echo "### Parser Test Results" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat /tmp/parser-results.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
           if [ $rc -ne 0 ]; then
             echo "::error::Parser tests failed with exit code $rc"
+            grep FAIL /tmp/parser-results.txt >> $GITHUB_STEP_SUMMARY || true
             exit $rc
           fi
 
