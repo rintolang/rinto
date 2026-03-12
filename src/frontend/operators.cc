@@ -14,7 +14,8 @@ int OPERATOR_PRECEDENCE[] =
          6, // OPER_NEG
         -2, -2, -2, -2, // compound assignments (not used in expressions)
          2,  0,  1,  6,  3,  3, // BAND, BOR, BXOR, BNOT(unary), LSHIFT, RSHIFT
-        -2, -2 // OPER_TERNARY, OPER_COLON (not used in standard expression parsing)
+        -2, -2, // OPER_TERNARY, OPER_COLON (not used in standard expression parsing)
+        -2 // OPER_COMMA (delimiter, not used in expressions)
 };
 
 /*
@@ -81,6 +82,9 @@ void __init_op_map__()
         // Ternary operators
         __operator_map__.insert(op_pair("?", OPER_TERNARY));
         __operator_map__.insert(op_pair(":", OPER_COLON));
+
+        // Comma
+        __operator_map__.insert(op_pair(",", OPER_COMMA));
 
         __operator_map_is_inited__ = true;
 }
@@ -178,6 +182,7 @@ std::string operator_name(RIN_OPERATOR op)
         case OPER_RSHIFT:     return "'>>' operator";
         case OPER_TERNARY:    return "'?' operator";
         case OPER_COLON:      return "':' operator";
+        case OPER_COMMA:      return "',' operator";
         default:              return "illegal operator";
         }
 }
