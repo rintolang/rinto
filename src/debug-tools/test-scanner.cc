@@ -42,8 +42,8 @@ static void cleanup() {
 #define FAIL(msg) do { \
 	tests_failed++; \
 	printf("FAIL: %s\n", msg); \
-	fprintf(stderr, "::error::Scanner test %d FAILED: %s\n", tests_run, msg); \
-	fflush(stdout); fflush(stderr); \
+	printf("::error::Scanner test %d FAILED: %s\n", tests_run, msg); \
+	fflush(stdout); \
 	return; \
 } while(0)
 #define EXPECT_CLS(tok, cls) \
@@ -694,8 +694,8 @@ static void test_classification_as_string() {
 typedef void (*TestFn)();
 
 static void signal_handler(int sig) {
-	fprintf(stderr, "\n[FATAL] Signal %d received after test %d\n", sig, tests_run);
-	fflush(stderr);
+	printf("\n::error::FATAL Signal %d received after test %d\n", sig, tests_run);
+	fflush(stdout);
 	exit(128 + sig);
 }
 
