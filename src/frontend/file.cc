@@ -1,7 +1,7 @@
 // file.cc - File reading, character streaming, and location management
 #include "file.hpp"
 
-void File::open(std::string path)
+void File::open(const std::string& path)
 {
         if (this->buffer.is_open())
                 this->buffer.close();

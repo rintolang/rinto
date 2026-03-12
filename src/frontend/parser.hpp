@@ -51,6 +51,9 @@ public:
         Parser(Scanner* scanner, Backend* backend);
         ~Parser();
 
+        Parser(const Parser&) = delete;
+        Parser& operator=(const Parser&) = delete;
+
         // Create a parser that reads from the specified path
         Parser(const std::string& path, Backend* backend);
 
@@ -102,7 +105,7 @@ private:
         Statement* parse_return_statement();
 
         // Parses a function call as an expression statement
-        Statement* parse_call_statement(const std::string& name, Location loc);
+        Statement* parse_call_statement(const std::string& name, const Location& loc);
 
         // Parse expressions
         Expression* parse_binary_expression();

@@ -22,7 +22,7 @@ public:
         void set_identifier(const std::string& ident)
         { this->_identifier = ident; }
 
-        void set_location(Location loc)
+        void set_location(const Location& loc)
         { this->_location = loc; }
 
         bool has_identifier()
@@ -50,7 +50,7 @@ public:
          */
 
         // Variable.
-        Bvariable* variable(Named_object* obj)
+        Bvariable* variable(Named_object* obj) override
         {
                 std::string identifier = "NULL";
                 Location loc = File::unknown_location();
@@ -64,21 +64,21 @@ public:
                 }
 
                 rin_inform(loc, "CREATED VAR OBJECT: '%s'",
-                        &identifier[0]);
+                        identifier.c_str());
 
                 return var;
         }
 
         // Expressions.
 
-        Bexpression* invalid_expression()
+        Bexpression* invalid_expression() override
         {
                 rin_warning_at(File::unknown_location(), 0,
                         "RECEIVED INVALID EXPRESSION SIGNAL");
                 return new Bexpression;
         }
 
-        Bexpression* var_reference(Bvariable* var, Location loc)
+        Bexpression* var_reference(Bvariable* var, const Location& loc) override
         {
                 std::string identifier = "NULL";
                 if (var != NULL && var->has_identifier())
@@ -87,12 +87,12 @@ public:
                 delete var;
 
                 rin_inform(loc, "CREATED VAR REF WITH IDENT: %s",
-                        &identifier[0]);
+                        identifier.c_str());
 
                 return new Bexpression;
         }
 
-        Bexpression* conditional_expression(Bexpression* cond, Location loc)
+        Bexpression* conditional_expression(Bexpression* cond, const Location& loc) override
         {
                 rin_inform(loc, "CREATED COND EXPRESSION");
                 delete cond;
@@ -100,15 +100,15 @@ public:
         }
 
         Bexpression* unary_expression
-        (RIN_OPERATOR op, Bexpression* expr, Location loc)
+        (RIN_OPERATOR op, Bexpression* expr, const Location& loc) override
         {
                 rin_inform(loc, "CREATED UNARY EXPRESSION WITH OP: %s",
-                        &operator_name(op)[0]);
+                        operator_name(op).c_str());
                 delete expr;
                 return new Bexpression;
         }
 
-        Bexpression* float_expression(const mpfr_t* val, Location loc)
+        Bexpression* float_expression(const mpfr_t* val, const Location& loc) override
         {
                 if (val) {
                         long i;
@@ -122,7 +122,7 @@ public:
                 return new Bexpression;
         }
 
-        Bexpression* integer_expression(const mpfr_t* val, Location loc)
+        Bexpression* integer_expression(const mpfr_t* val, const Location& loc) override
         {
                 if (val) {
                         long i;
@@ -137,10 +137,10 @@ public:
         }
 
         Bexpression* binary_expression
-        (RIN_OPERATOR op, Bexpression* left, Bexpression* right, Location loc)
+        (RIN_OPERATOR op, Bexpression* left, Bexpression* right, const Location& loc) override
         {
                 rin_inform(loc, "CREATED BINARY EXPRESSION WITH: %s",
-                        &operator_name(op)[0]);
+                        operator_name(op).c_str());
                 delete left;
                 delete right;
 
@@ -149,36 +149,36 @@ public:
 
         // Statements.
 
-        Bstatement* invalid_statement()
+        Bstatement* invalid_statement() override
         {
                 rin_inform(File::unknown_location(), "CREATED INVALID STATEMENT\n");
                 return new Bstatement;
         }
 
-        Bstatement* var_dec_statement(Bvariable* var)
+        Bstatement* var_dec_statement(Bvariable* var) override
         {
                 rin_inform(var->location(),
                         "CREATED VARIABLE DECLARATION STMT FOR VAR: %s\n",
-                        &var->identifier()[0]);
+                        var->identifier().c_str());
                 delete var;
                 return new Bstatement;
         }
 
-        Bstatement* inc_statement(Bexpression* var, Location loc)
+        Bstatement* inc_statement(Bexpression* var, const Location& loc) override
         {
                 rin_inform(loc, "CREATED INC STMT\n");
                 delete var;
                 return new Bstatement;
         }
 
-        Bstatement* dec_statement(Bexpression* var, Location loc)
+        Bstatement* dec_statement(Bexpression* var, const Location& loc) override
         {
                 rin_inform(loc, "CREATED DEC STMT\n");
                 delete var;
                 return new Bstatement;
         }
 
-        Bstatement* expression_statement(Bexpression* expr, Location loc)
+        Bstatement* expression_statement(Bexpression* expr, const Location& loc) override
         {
                 rin_inform(loc, "CREATED EXPRESSION STATEMENT\n");
                 delete expr;
@@ -186,7 +186,7 @@ public:
         }
 
         Bstatement* compound_statement
-        (Bstatement* first, Bstatement* second, Location loc)
+        (Bstatement* first, Bstatement* second, const Location& loc) override
         {
                 rin_inform(loc, "CREATED COMPOUND STATEMENT\n");
                 delete first;
@@ -196,7 +196,7 @@ public:
         }
 
         Bstatement* if_statement
-        (Bexpression* expr, Scope* scope, Scope* else_block, Location loc)
+        (Bexpression* expr, Scope* scope, Scope* else_block, const Location& loc) override
         {
                 if (else_block)
                         rin_inform(loc, "CREATED IF-ELSE STATEMENT\n");
@@ -209,7 +209,7 @@ public:
         }
 
         Bstatement* assignment_statement
-        (Bexpression* lhs, Bexpression* rhs, Location loc)
+        (Bexpression* lhs, Bexpression* rhs, const Location& loc) override
         {
                 rin_inform(loc, "CREATED ASSIGNMENT STATEMENT\n");
                 delete lhs;
@@ -219,7 +219,7 @@ public:
         }
 
         Bstatement* for_statement
-        (Bstatement* ind, Bstatement* cond, Bstatement* inc, Scope* then, Location loc)
+        (Bstatement* ind, Bstatement* cond, Bstatement* inc, Scope* then, const Location& loc) override
         {
                 rin_inform(loc, "CREATED FOR STATEMENT\n");
                 delete ind;
@@ -230,7 +230,7 @@ public:
                 return new Bstatement;
         }
 
-        Bstatement* return_statement(Bexpression* expr, Location loc)
+        Bstatement* return_statement(Bexpression* expr, const Location& loc) override
         {
                 rin_inform(loc, "CREATED RETURN STATEMENT\n");
                 delete expr;
@@ -239,32 +239,32 @@ public:
 
         Bstatement* function_statement
         (const std::string& name, const std::vector<std::string>& params,
-         Scope* body, Location loc)
+         Scope* body, const Location& loc) override
         {
                 rin_inform(loc, "CREATED FUNCTION DECLARATION: %s\n",
-                        &name[0]);
+                        name.c_str());
                 // Scope owned by Function_declaration_statement; do not delete here.
                 return new Bstatement;
         }
 
         Bexpression* call_expression
         (const std::string& name, const std::vector<Bexpression*>& args,
-         Location loc)
+         const Location& loc) override
         {
                 rin_inform(loc, "CREATED CALL EXPRESSION: %s\n",
-                        &name[0]);
+                        name.c_str());
                 for (auto itr = args.begin(); itr != args.end(); ++itr)
                         delete *itr;
                 return new Bexpression;
         }
 
-        Bstatement* break_statement(Location loc)
+        Bstatement* break_statement(const Location& loc) override
         {
                 rin_inform(loc, "CREATED BREAK STATEMENT\n");
                 return new Bstatement;
         }
 
-        Bstatement* continue_statement(Location loc)
+        Bstatement* continue_statement(const Location& loc) override
         {
                 rin_inform(loc, "CREATED CONTINUE STATEMENT\n");
                 return new Bstatement;
@@ -272,13 +272,13 @@ public:
 
         // Scope Signals.
 
-        Scope* enter_scope()
+        Scope* enter_scope() override
         {
                 rin_inform(File::unknown_location(), "ENTERED SCOPE");
                 return Backend::enter_scope();
         }
 
-        Scope* leave_scope()
+        Scope* leave_scope() override
         {
                 rin_inform(File::unknown_location(), "LEFT SCOPE");
                 return Backend::leave_scope();

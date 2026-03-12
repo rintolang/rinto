@@ -11,7 +11,7 @@ void delete_stmt(Bstatement* stmt)
 bool gcc_loc_infile = false;
 
 // Convert a frontend location to GCC location type.
-location_t gcc_location(const Location loc)
+location_t gcc_location(const Location& loc)
 {
         if (loc == File::unknown_location())
                 return UNKNOWN_LOCATION;
@@ -20,7 +20,7 @@ location_t gcc_location(const Location loc)
                 linemap_add(line_table, LC_LEAVE, 0, NULL, 0);
 
         // Enter a file.
-        linemap_add(line_table, LC_ENTER, 0, &loc.filename[0], LOC_LINE_BEGIN);
+        linemap_add(line_table, LC_ENTER, 0, loc.filename.c_str(), LOC_LINE_BEGIN);
 
         // Enter a line. Line counts on the frontend begin at 0.
         linemap_line_start(line_table, loc.line + LOC_LINE_BEGIN, 1);
@@ -70,7 +70,7 @@ Bvariable* Gcc_backend::variable(Named_object* obj)
 }
 
 Bexpression* Gcc_backend::unary_expression
-(RIN_OPERATOR op, Bexpression* expr, Location loc)
+(RIN_OPERATOR op, Bexpression* expr, const Location& loc)
 {
         RIN_ASSERT(expr);
         tree expr_tree = expr->get_tree();
@@ -140,7 +140,7 @@ tree convert (tree type, tree expr)
 }
 
 Bexpression* Gcc_backend::binary_expression
-(RIN_OPERATOR op, Bexpression* left, Bexpression* right, Location loc)
+(RIN_OPERATOR op, Bexpression* left, Bexpression* right, const Location& loc)
 {
         RIN_ASSERT(left && right);
         tree left_tree = left->get_tree();
@@ -173,7 +173,7 @@ Bexpression* Gcc_backend::binary_expression
         return new Bexpression(ret);
 }
 
-Bexpression* Gcc_backend::var_reference(Bvariable* var, Location loc)
+Bexpression* Gcc_backend::var_reference(Bvariable* var, const Location& loc)
 {
         RIN_ASSERT(var);
         tree ret = var->get_tree();
@@ -191,7 +191,7 @@ Bexpression* Gcc_backend::var_reference(Bvariable* var, Location loc)
  * i.e. a char* pointer type.
  */
 
-Bexpression* Gcc_backend::float_expression(const mpfr_t* val, Location loc)
+Bexpression* Gcc_backend::float_expression(const mpfr_t* val, const Location& loc)
 {
         RIN_ASSERT(val);
 
@@ -204,7 +204,7 @@ Bexpression* Gcc_backend::float_expression(const mpfr_t* val, Location loc)
         return new Bexpression(ret);
 }
 
-Bexpression* Gcc_backend::integer_expression(const mpfr_t* val, Location loc)
+Bexpression* Gcc_backend::integer_expression(const mpfr_t* val, const Location& loc)
 {
         RIN_ASSERT(val);
 
@@ -237,7 +237,7 @@ Bstatement* Gcc_backend::var_dec_statement(Bvariable* var)
         return new Bstatement(stmt);
 }
 
-Bstatement* Gcc_backend::assignment_statement(Bexpression* lhs, Bexpression* rhs, Location loc)
+Bstatement* Gcc_backend::assignment_statement(Bexpression* lhs, Bexpression* rhs, const Location& loc)
 {
         tree ass_stmt = build2_loc(gcc_location(loc), MODIFY_EXPR,
                  void_type_node, lhs->get_tree(), rhs->get_tree());
@@ -247,7 +247,7 @@ Bstatement* Gcc_backend::assignment_statement(Bexpression* lhs, Bexpression* rhs
         return new Bstatement(ass_stmt);
 }
 
-Bstatement* Gcc_backend::inc_statement(Bexpression* unary, Location loc)
+Bstatement* Gcc_backend::inc_statement(Bexpression* unary, const Location& loc)
 {
         /*
          * Unary is actually just a variable reference.
@@ -262,7 +262,7 @@ Bstatement* Gcc_backend::inc_statement(Bexpression* unary, Location loc)
         return new Bstatement(t);
 }
 
-Bstatement* Gcc_backend::dec_statement(Bexpression* unary, Location loc)
+Bstatement* Gcc_backend::dec_statement(Bexpression* unary, const Location& loc)
 {
         /*
          * Unary is actually just a variable reference.
@@ -278,7 +278,7 @@ Bstatement* Gcc_backend::dec_statement(Bexpression* unary, Location loc)
 }
 
 Bstatement* Gcc_backend::if_statement
-(Bexpression* cond, Scope* then, Scope* else_block, Location loc)
+(Bexpression* cond, Scope* then, Scope* else_block, const Location& loc)
 {
         RIN_ASSERT(cond);
         RIN_ASSERT(then);
@@ -305,7 +305,7 @@ Bstatement* Gcc_backend::if_statement
 }
 
 Bstatement* Gcc_backend::for_statement
-(Bstatement* ind, Bstatement* cond, Bstatement* inc, Scope* then_block, Location loc)
+(Bstatement* ind, Bstatement* cond, Bstatement* inc, Scope* then_block, const Location& loc)
 {
         // Get induction, condition, increment trees.
         tree ind_tree  = (ind)  ? ind->get_tree()  : NULL_TREE;
@@ -419,7 +419,7 @@ Bstatement* Gcc_backend::for_statement
         return new Bstatement(master_stmt_list);
 }
 
-Bstatement* Gcc_backend::expression_statement(Bexpression* expr, Location loc)
+Bstatement* Gcc_backend::expression_statement(Bexpression* expr, const Location& loc)
 {
         RIN_ASSERT(expr);
         tree t = expr->get_tree();
@@ -428,7 +428,7 @@ Bstatement* Gcc_backend::expression_statement(Bexpression* expr, Location loc)
         return new Bstatement(t);
 }
 
-Bstatement* Gcc_backend::compound_statement(Bstatement* first, Bstatement* second, Location loc)
+Bstatement* Gcc_backend::compound_statement(Bstatement* first, Bstatement* second, const Location& loc)
 {
         tree stmt_list = NULL_TREE;
         tree t1 = first->get_tree();
@@ -454,7 +454,7 @@ Bstatement* Gcc_backend::compound_statement(Bstatement* first, Bstatement* secon
         return new Bstatement(stmt_list);
 }
 
-Bstatement* Gcc_backend::return_statement(Bexpression* expr, Location loc)
+Bstatement* Gcc_backend::return_statement(Bexpression* expr, const Location& loc)
 {
         tree expr_tree = NULL_TREE;
         if (expr) {
@@ -470,7 +470,7 @@ Bstatement* Gcc_backend::return_statement(Bexpression* expr, Location loc)
 
 Bstatement* Gcc_backend::function_statement
 (const std::string& name, const std::vector<std::string>& params,
- Scope* body, Location loc)
+ Scope* body, const Location& loc)
 {
         // TODO: Full GCC function codegen is complex; stub for now.
         delete body;
@@ -478,7 +478,7 @@ Bstatement* Gcc_backend::function_statement
 }
 
 Bexpression* Gcc_backend::call_expression
-(const std::string& name, const std::vector<Bexpression*>& args, Location loc)
+(const std::string& name, const std::vector<Bexpression*>& args, const Location& loc)
 {
         // TODO: Full GCC call expression codegen; stub for now.
         for (auto itr = args.begin(); itr != args.end(); ++itr)
@@ -486,13 +486,13 @@ Bexpression* Gcc_backend::call_expression
         return this->invalid_expression();
 }
 
-Bstatement* Gcc_backend::break_statement(Location loc)
+Bstatement* Gcc_backend::break_statement(const Location& loc)
 {
         // TODO: Implement break for loops.
         return this->invalid_statement();
 }
 
-Bstatement* Gcc_backend::continue_statement(Location loc)
+Bstatement* Gcc_backend::continue_statement(const Location& loc)
 {
         // TODO: Implement continue for loops.
         return this->invalid_statement();

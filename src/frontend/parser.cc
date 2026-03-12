@@ -705,7 +705,7 @@ Statement* Parser::parse_return_statement()
         return Statement::make_return(expr, ret_tok.location());
 }
 
-Statement* Parser::parse_call_statement(const std::string& name, Location loc)
+Statement* Parser::parse_call_statement(const std::string& name, const Location& loc)
 {
         // Consume '(' token.
         Token lparen = this->_scanner->next_token();
@@ -775,7 +775,7 @@ public:
         // The node type
         enum node_type { INVALID_NODE, OPERATOR_NODE, VAR_NODE, FLOAT_NODE };
 
-        Expression_node(Token token, Backend* backend)
+        Expression_node(const Token& token, Backend* backend)
         {
                 this->_location = token.location();
                 this->_str = token.string();

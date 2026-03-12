@@ -55,17 +55,17 @@ public:
 
         // Custom Token Type constructors
         static Token make_invalid_token
-        (const std::string& str, Location loc);
+        (const std::string& str, const Location& loc);
 
-        static Token make_eof_token(Location loc);
-        static Token make_eol_token(Location loc);
-        static Token make_rid_token(RID rid, Location loc);
-        static Token make_operator_token(RIN_OPERATOR op, Location loc);
-        static Token make_float_token(const std::string& str, Location loc);
-        static Token make_integer_token(const std::string& str, Location loc);
+        static Token make_eof_token(const Location& loc);
+        static Token make_eol_token(const Location& loc);
+        static Token make_rid_token(RID rid, const Location& loc);
+        static Token make_operator_token(RIN_OPERATOR op, const Location& loc);
+        static Token make_float_token(const std::string& str, const Location& loc);
+        static Token make_integer_token(const std::string& str, const Location& loc);
 
         // Make an identifier token
-        static Token make_ident_token(std::string name, Location loc);
+        static Token make_ident_token(const std::string& name, const Location& loc);
 
         // True if Token is EOL or semicolon operator
         bool is_semicolon();
@@ -82,9 +82,9 @@ public:
 
 private:
         // Private constructor: called by make_x_token functions
-        Token(Classification c, std::string str, Location l)
+        Token(Classification c, const std::string& str, const Location& l)
                 : _classification(c), _location(l), token_string(str)
-                {}
+                { value.op_value = OPER_ILLEGAL; }
 
         // Clears dynamically allocated mpfr/mpz, resets attributes to defaults
         void clear();
@@ -118,13 +118,16 @@ class Scanner
 {
 public:
         Scanner() {};
-        Scanner(File* file) : src(file) {};
+        explicit Scanner(File* file) : src(file) {};
+
+        Scanner(const Scanner&) = delete;
+        Scanner& operator=(const Scanner&) = delete;
 
         ~Scanner()
         { delete this->src; }
 
         // Instantiate a scanner directly from a file.
-        Scanner(const std::string& path)
+        explicit Scanner(const std::string& path)
         { this->src = new File(path); }
 
         // Read tokens from the scanner source.
@@ -165,9 +168,9 @@ public:
          * The value will subsequently be stored in the 'out' parameter.
          */
         static void string_to_int(const std::string& value, mpz_t out)
-        { mpz_init_set_str(out, &value[0], 0); }
+        { mpz_init_set_str(out, value.c_str(), 0); }
         static void float_to_int(const std::string& value, mpfr_t out)
-        { mpfr_init_set_str(out, &value[0], 0, MPFR_RNDN); }
+        { mpfr_init_set_str(out, value.c_str(), 0, MPFR_RNDN); }
 
 protected:
 
@@ -176,7 +179,7 @@ protected:
          * whether ExpectMatch expectations are being fulfilled. If an expected token is
          * acknowledged, then it is removed from expect_matches.
          */
-        void acknowledge(Token tok);
+        void acknowledge(const Token& tok);
 
         /*
          * Expect to eventually receive a particular token. This currently only works with
@@ -184,9 +187,9 @@ protected:
          * then the expectation is taken to be its paired symbol. If a RIN_OPERATOR  match is
          * passed, then match is what's expected to be received.
          */
-        void expect_match(Token tok)
+        void expect_match(const Token& tok)
         { expect_match(tok, get_symbol_pair(tok.op())); }
-        void expect_match(Token tok, RIN_OPERATOR match);
+        void expect_match(const Token& tok, RIN_OPERATOR match);
 
         int skip_whitespace();
         bool is_whitespace(int c);

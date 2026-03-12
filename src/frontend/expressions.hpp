@@ -27,7 +27,7 @@ public:
                 EXPRESSION_INTEGER,  EXPRESSION_CALL
         };
 
-        Expression(Expression_classification cl, Location loc)
+        Expression(Expression_classification cl, const Location& loc)
                 : _classification(cl), _location(loc)
         {}
 
@@ -49,31 +49,31 @@ public:
         { return this->_location; }
 
         // Make an invalid expression
-        static Expression* make_invalid(Location loc);
+        static Expression* make_invalid(const Location& loc);
 
         // Make unary expression
         static Expression* make_unary
-        (RIN_OPERATOR op, Expression* expr, Location loc);
+        (RIN_OPERATOR op, Expression* expr, const Location& loc);
 
         // Make binary expression
         static Expression* make_binary
-        (RIN_OPERATOR op, Expression* left, Expression* right, Location loc);
+        (RIN_OPERATOR op, Expression* left, Expression* right, const Location& loc);
 
         // Make variable reference
-        static Expression* make_var_reference(Named_object* var, Location loc);
+        static Expression* make_var_reference(Named_object* var, const Location& loc);
 
         // Make float expression
-        static Expression* make_float(const mpfr_t* val, Location loc);
+        static Expression* make_float(const mpfr_t* val, const Location& loc);
 
         // Make integer expression
-        static Expression* make_integer(const mpfr_t* val, Location loc);
+        static Expression* make_integer(const mpfr_t* val, const Location& loc);
 
         // make conditional expression
-        static Expression* make_conditional(Expression* cond, Location loc);
+        static Expression* make_conditional(Expression* cond, const Location& loc);
 
         // Make a function call expression
         static Expression* make_call
-        (const std::string& name, std::vector<Expression*>& args, Location loc);
+        (const std::string& name, std::vector<Expression*>& args, const Location& loc);
 
         // Converts the expression to a unary expression type
         Unary_expression* unary_expression()
@@ -138,12 +138,12 @@ private:
 class Invalid_expression : public Expression
 {
 public:
-        Invalid_expression(Location loc)
+        explicit Invalid_expression(const Location& loc)
                 : Expression(EXPRESSION_INVALID, loc)
         {}
 
 protected:
-        Bexpression* do_get_backend(Backend* backend);
+        Bexpression* do_get_backend(Backend* backend) override;
 };
 
 /*
@@ -153,12 +153,12 @@ protected:
 class Unary_expression : public Expression
 {
 public:
-        Unary_expression(RIN_OPERATOR op, Expression* expr, Location loc)
+        Unary_expression(RIN_OPERATOR op, Expression* expr, const Location& loc)
                 : Expression(EXPRESSION_UNARY, loc),
                   _op(op), _expr(expr)
         { RIN_ASSERT(expr); }
 
-        ~Unary_expression()
+        ~Unary_expression() override
         { delete this->_expr; }
 
         // Return the operand
@@ -170,7 +170,7 @@ public:
         { return this->_op; }
 
 protected:
-        Bexpression* do_get_backend(Backend* backend);
+        Bexpression* do_get_backend(Backend* backend) override;
 
 private:
         RIN_OPERATOR _op;
@@ -185,12 +185,12 @@ class Binary_expression : public Expression
 {
 public:
         Binary_expression
-        (RIN_OPERATOR op, Expression* left, Expression* right, Location loc)
+        (RIN_OPERATOR op, Expression* left, Expression* right, const Location& loc)
                 : Expression(EXPRESSION_BINARY, loc),
                   _op(op), _left(left), _right(right)
         {}
 
-        ~Binary_expression();
+        ~Binary_expression() override;
 
         // Return the operator
         RIN_OPERATOR op()
@@ -205,7 +205,7 @@ public:
         { return this->_right; }
 
 protected:
-        Bexpression* do_get_backend(Backend* backend);
+        Bexpression* do_get_backend(Backend* backend) override;
 
 private:
         RIN_OPERATOR _op;
@@ -217,19 +217,19 @@ private:
 class Var_expression : public Expression
 {
 public:
-        Var_expression(Named_object* variable, Location loc)
+        Var_expression(Named_object* variable, const Location& loc)
                 : Expression(EXPRESSION_VAR_REFERENCE, loc),
                   _variable(variable)
         {}
 
-        ~Var_expression() {}
+        ~Var_expression() override {}
 
         // Return the variable
         Named_object* named_object() const
         { return this->_variable; }
 
 protected:
-        Bexpression* do_get_backend(Backend* backend);
+        Bexpression* do_get_backend(Backend* backend) override;
 
 private:
         Named_object* _variable;
@@ -239,12 +239,12 @@ private:
 class Conditional_expression : public Expression
 {
 public:
-        Conditional_expression(Expression* cond, Location loc)
+        Conditional_expression(Expression* cond, const Location& loc)
                 : Expression(EXPRESSION_CONDITIONAL, loc),
                   _cond(cond)
         {}
 
-        ~Conditional_expression()
+        ~Conditional_expression() override
         { delete this->_cond;}
 
         // Return the condition
@@ -252,7 +252,7 @@ public:
         { return this->_cond; }
 
 protected:
-        Bexpression* do_get_backend(Backend* backend);
+        Bexpression* do_get_backend(Backend* backend) override;
 
 private:
         Expression* _cond;
@@ -262,14 +262,14 @@ private:
 class Float_expression : public Expression
 {
 public:
-        Float_expression(const mpfr_t* val, Location loc)
+        Float_expression(const mpfr_t* val, const Location& loc)
                 : Expression(EXPRESSION_FLOAT, loc)
         {
                 RIN_ASSERT(val);
                 mpfr_init_set(this->_val, *val, MPFR_RNDN);
         }
 
-        ~Float_expression()
+        ~Float_expression() override
         { mpfr_clear(_val); }
 
         // Whether the current value is equivalent to zero.
@@ -284,7 +284,7 @@ public:
         { return &_val; }
 
 protected:
-        Bexpression* do_get_backend(Backend* backend);
+        Bexpression* do_get_backend(Backend* backend) override;
 
 private:
         mpfr_t _val;
@@ -294,14 +294,14 @@ private:
 class Integer_expression : public Expression
 {
 public:
-        Integer_expression(const mpfr_t* val, Location loc)
+        Integer_expression(const mpfr_t* val, const Location& loc)
                 : Expression(EXPRESSION_INTEGER, loc)
         {
                 RIN_ASSERT(val);
                 mpfr_init_set(this->_val, *val, MPFR_RNDN);
         }
 
-        ~Integer_expression()
+        ~Integer_expression() override
         { mpfr_clear(_val); }
 
         // Return a pointer to the mpfr_t integer value.
@@ -309,7 +309,7 @@ public:
         { return &_val; }
 
 protected:
-        Bexpression* do_get_backend(Backend* backend);
+        Bexpression* do_get_backend(Backend* backend) override;
 
 private:
         mpfr_t _val;
@@ -320,12 +320,12 @@ class Call_expression : public Expression
 {
 public:
         Call_expression
-        (const std::string& name, std::vector<Expression*>& args, Location loc)
+        (const std::string& name, std::vector<Expression*>& args, const Location& loc)
                 : Expression(EXPRESSION_CALL, loc),
                   _name(name), _args(args)
         {}
 
-        ~Call_expression()
+        ~Call_expression() override
         {
                 for (auto itr = _args.begin(); itr != _args.end(); ++itr)
                         delete *itr;
@@ -340,7 +340,7 @@ public:
         { return this->_args; }
 
 protected:
-        Bexpression* do_get_backend(Backend* backend);
+        Bexpression* do_get_backend(Backend* backend) override;
 
 private:
         std::string _name;

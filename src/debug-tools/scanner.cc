@@ -1,6 +1,9 @@
 #include <backend.hpp>
 #include <scanner.hpp>
 
+class Bexpression {};
+class Bstatement  {};
+
 // Deletes a statement.
 void delete_stmt(Bstatement* stmt)
 { delete stmt; }
@@ -23,8 +26,8 @@ int main(int argc, char** argv)
         while (sc.has_next()) {
                 Token tk = sc.next_token();
                 Location l = tk.location();
-                printf("%s:%d:%d: %s \t %s\n", &l.filename[0], l.line, l.column,
-                       &tk.classification_as_string()[0], tk.str());
+                printf("%s:%d:%d: %s \t %s\n", l.filename.c_str(), l.line, l.column,
+                       tk.classification_as_string().c_str(), tk.str());
         }
 
         printf("\n\nSCANNER ERRORS: \n");

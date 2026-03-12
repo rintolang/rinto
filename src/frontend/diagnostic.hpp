@@ -76,20 +76,20 @@
  * All other format specifiers are as defined by 'sprintf'. The final resulting
  * message is then sent to the back end via rin_be_error_at/rin_be_warning_at.
  */
-extern void rin_error_at(const Location, const char* fmt, ...)
+extern void rin_error_at(const Location&, const char* fmt, ...)
         RIN_ATTRIBUTE_GCC_DIAG(2,3);
-extern void rin_warning_at(const Location, int opt, const char* fmt, ...)
+extern void rin_warning_at(const Location&, int opt, const char* fmt, ...)
         RIN_ATTRIBUTE_GCC_DIAG(3,4);
-extern void rin_fatal_error(const Location, const char* fmt, ...)
+extern void rin_fatal_error(const Location&, const char* fmt, ...)
         RIN_ATTRIBUTE_GCC_DIAG(2,3);
-extern void rin_inform(const Location, const char* fmt, ...)
+extern void rin_inform(const Location&, const char* fmt, ...)
         RIN_ATTRIBUTE_GCC_DIAG(2,3);
 
 /*
  * rin_debug is used to report a debugging message at a location.  This
  * uses standard printf formatting.
  */
-extern void rin_debug(const Location, const char* fmt, ...)
+extern void rin_debug(const Location&, const char* fmt, ...)
         RIN_ATTRIBUTE_PRINTF(2, 3);
 
 /*
@@ -107,10 +107,10 @@ extern const char* rin_close_quote();
  * instead use the equivalent routines above. The back end is required to
  * implement these routines.
  */
-extern void rin_be_error_at(const Location, const std::string& errmsg);
-extern void rin_be_warning_at(const Location, int opt, const std::string& warningmsg);
-extern void rin_be_fatal_error(const Location, const std::string& errmsg);
-extern void rin_be_inform(const Location, const std::string& infomsg);
+extern void rin_be_error_at(const Location&, const std::string& errmsg);
+extern void rin_be_warning_at(const Location&, int opt, const std::string& warningmsg);
+extern void rin_be_fatal_error(const Location&, const std::string& errmsg);
+extern void rin_be_inform(const Location&, const std::string& infomsg);
 extern void rin_be_get_quotechars(const char** open_quote, const char** close_quote);
 
 /*

@@ -1,31 +1,31 @@
 // expressions.cc - Expression factory methods and backend code generation
 #include "expressions.hpp"
 
-Expression* Expression::make_invalid(Location loc)
+Expression* Expression::make_invalid(const Location& loc)
 { return new Invalid_expression(loc); }
 
 Expression* Expression::make_unary
-(RIN_OPERATOR op, Expression* expr, Location loc)
+(RIN_OPERATOR op, Expression* expr, const Location& loc)
 { return new Unary_expression(op, expr, loc); }
 
 Expression* Expression::make_binary
-(RIN_OPERATOR op, Expression* left, Expression* right, Location loc)
+(RIN_OPERATOR op, Expression* left, Expression* right, const Location& loc)
 { return new Binary_expression(op, left, right, loc); }
 
-Expression* Expression::make_var_reference(Named_object* var, Location loc)
+Expression* Expression::make_var_reference(Named_object* var, const Location& loc)
 { return new Var_expression(var, loc); }
 
-Expression* Expression::make_conditional(Expression* cond, Location loc)
+Expression* Expression::make_conditional(Expression* cond, const Location& loc)
 { return new Conditional_expression(cond, loc); }
 
-Expression* Expression::make_float(const mpfr_t* val, Location loc)
+Expression* Expression::make_float(const mpfr_t* val, const Location& loc)
 { return new Float_expression(val, loc); }
 
-Expression* Expression::make_integer(const mpfr_t* val, Location loc)
+Expression* Expression::make_integer(const mpfr_t* val, const Location& loc)
 { return new Integer_expression(val, loc); }
 
 Expression* Expression::make_call
-(const std::string& name, std::vector<Expression*>& args, Location loc)
+(const std::string& name, std::vector<Expression*>& args, const Location& loc)
 { return new Call_expression(name, args, loc); }
 
 // Invalid_expression implementation:
@@ -96,12 +96,12 @@ Bexpression* Binary_expression::do_get_backend(Backend* backend)
                    right_c == EXPRESSION_UNARY || right_c == EXPRESSION_VAR_REFERENCE);
 
         // Create backend expressions
-        Bexpression* left = this->left()->get_backend(backend);
-        Bexpression* right = this->right()->get_backend(backend);
-        RIN_ASSERT(left != NULL && right != NULL);
+        Bexpression* bleft = this->left()->get_backend(backend);
+        Bexpression* bright = this->right()->get_backend(backend);
+        RIN_ASSERT(bleft != NULL && bright != NULL);
 
-        return backend->binary_expression(this->op(), left,
-                right, this->location());
+        return backend->binary_expression(this->op(), bleft,
+                bright, this->location());
 }
 
 // Var_expression implementation:
