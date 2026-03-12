@@ -33,10 +33,24 @@ jobs:
       run: make test-parser
 
     - name: Run scanner unit tests
-      run: ./build/test-scanner.out || echo "SCANNER TESTS EXITED WITH CODE $?"
+      run: |
+          set +e
+          ./build/test-scanner.out
+          rc=$?
+          if [ $rc -ne 0 ]; then
+            echo "::error::Scanner tests failed with exit code $rc"
+            exit $rc
+          fi
 
     - name: Run parser unit tests
-      run: ./build/test-parser.out || echo "PARSER TESTS EXITED WITH CODE $?"
+      run: |
+          set +e
+          ./build/test-parser.out
+          rc=$?
+          if [ $rc -ne 0 ]; then
+            echo "::error::Parser tests failed with exit code $rc"
+            exit $rc
+          fi
 
     - name: Run scanner on examples
       run: |
