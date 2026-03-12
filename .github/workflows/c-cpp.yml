@@ -12,40 +12,54 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Install dependencies on Ubuntu-latest
+    - uses: actions/checkout@v4
+
+    - name: Install dependencies
       run: |
           sudo apt-get update
-          sudo apt-get install libmpfr-dev libmpfr6 cppcheck valgrind
+          sudo apt-get install -y libmpfr-dev cppcheck valgrind
           g++ --version
-    - name: Debug-Scanner Module
+
+    - name: Build debug-scanner
       run: make debug-scanner
-    - name: Debug-Parser Module
+
+    - name: Build debug-parser
       run: make debug-parser
-    - name: Test-Scanner Module
+
+    - name: Build test-scanner
       run: make test-scanner
-    - name: Test-Parser Module
+
+    - name: Build test-parser
       run: make test-parser
-    - name: Run unit tests
-      run: make test
+
+    - name: Run scanner unit tests
+      run: ./build/test-scanner.out
+
+    - name: Run parser unit tests
+      run: ./build/test-parser.out
+
     - name: Run scanner on examples
       run: |
           for f in examples/*.rin; do
             echo "--- Scanning $f ---"
             ./build/debug-scanner.out "$f"
           done
+
     - name: Run parser on examples
       run: |
           for f in examples/*.rin; do
             echo "--- Parsing $f ---"
             ./build/debug-parser.out "$f" || true
           done
+
     - name: Valgrind memory leak check
       run: |
           for f in examples/*.rin; do
             echo "--- Valgrind: $f ---"
-            valgrind --leak-check=full --error-exitcode=1 ./build/debug-parser.out "$f" || true
+            valgrind --leak-check=full --error-exitcode=1 \
+              ./build/debug-parser.out "$f" || true
           done
+
     - name: Static analysis with cppcheck
       run: |
           cppcheck --enable=warning,style,performance \

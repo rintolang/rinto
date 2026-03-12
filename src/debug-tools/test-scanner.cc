@@ -3,6 +3,7 @@
 #include <scanner.hpp>
 #include <diagnostic.hpp>
 #include <fstream>
+#include <cstdlib>
 
 class Bexpression {};
 class Bstatement  {};
@@ -686,6 +687,7 @@ static void test_classification_as_string() {
 typedef void (*TestFn)();
 
 int main() {
+	atexit(cleanup);
 	printf("\n ---- TEST: SCANNER ---- \n\n");
 
 	TestFn tests[] = {

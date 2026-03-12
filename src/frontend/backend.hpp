@@ -36,7 +36,7 @@ struct Location {
         std::string filename;
 };
 
-static bool operator==(const Location& lhs, const Location& rhs)
+inline bool operator==(const Location& lhs, const Location& rhs)
 {
         if (lhs.offset != rhs.offset)
                 return false;
