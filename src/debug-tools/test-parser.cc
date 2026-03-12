@@ -2,6 +2,7 @@
 #include <backend.hpp>
 #include <parser.hpp>
 #include <fstream>
+#include <cstdlib>
 
 class Bexpression {};
 class Bstatement  {};
@@ -738,6 +739,7 @@ static void test_expression_many_operators() {
 typedef void (*TestFn)();
 
 int main() {
+	atexit(cleanup);
 	printf("\n ---- TEST: PARSER ---- \n\n");
 
 	TestFn tests[] = {

@@ -40,10 +40,17 @@
 #include <cstdarg>
 #include <cstdio>
 
-#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 1)
+/*
+ * __gcc_tdiag__ is only valid when compiling inside the GCC source tree
+ * (where IN_GCC is defined). For standalone builds, fall back to __printf__
+ * so that format-string checking still occurs without using GCC internals.
+ */
+#if defined(IN_GCC) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 1))
 #define RIN_ATTRIBUTE_GCC_DIAG(m, n) __attribute__ ((__format__ (__gcc_tdiag__, m, n))) __attribute__ ((__nonnull__ (m)))
+#elif __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 1)
+#define RIN_ATTRIBUTE_GCC_DIAG(m, n) __attribute__ ((__format__ (__printf__, m, n))) __attribute__ ((__nonnull__ (m)))
 #else
-#define RIN_ATTRIBUTE_GCC_DIAG(m,  n)
+#define RIN_ATTRIBUTE_GCC_DIAG(m, n)
 #endif
 
 #if __GNUC__ >= 3
