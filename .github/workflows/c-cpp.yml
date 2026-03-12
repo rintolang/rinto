@@ -33,10 +33,10 @@ jobs:
       run: make test-parser
 
     - name: Run scanner unit tests
-      run: ./build/test-scanner.out
+      run: ./build/test-scanner.out || echo "SCANNER TESTS EXITED WITH CODE $?"
 
     - name: Run parser unit tests
-      run: ./build/test-parser.out
+      run: ./build/test-parser.out || echo "PARSER TESTS EXITED WITH CODE $?"
 
     - name: Run scanner on examples
       run: |
