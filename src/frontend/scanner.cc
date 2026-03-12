@@ -349,7 +349,8 @@ Token Scanner::scan_token()
         }
 
         // Gather non-operator word
-        while (!is_whitespace(src->peek()) && !is_operator((char)src->peek()) && src->peek() != '\n')
+        while (!is_whitespace(src->peek()) && !is_operator((char)src->peek())
+               && src->peek() != '\n' && src->peek() != '\r')
                 tokenStr += (char)src->get_char();
 
         // Gather float.
@@ -396,7 +397,7 @@ Token Scanner::scan_token()
 
 bool Scanner::is_whitespace(int c)
 {
-        if (c == ' ' || c == -1 || c == '\t')
+        if (c == ' ' || c == -1 || c == '\t' || c == '\r')
                 return true;
         return false;
 }

@@ -6,7 +6,7 @@ void File::open(std::string path)
         if (this->buffer.is_open())
                 this->buffer.close();
 
-        this->buffer.open(path, std::ifstream::in);
+        this->buffer.open(path, std::ifstream::in | std::ifstream::binary);
         this->is_finished = false;
 
         this->loc.filename = path;
